@@ -40,7 +40,7 @@ return
 	SendInput {LShift down}
 return
 
-; ESCAPE pressed
+; Escape pressed
 ~*Esc::
 	; Save toggle states
 	wasCrouching := isCrouching
