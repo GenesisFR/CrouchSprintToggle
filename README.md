@@ -7,9 +7,9 @@ You can run the script from anywhere.
 
 ## Usage:
 
-Escape: save toggle states, restore them when pressed again (useful in menus)
-Shift: toggle sprint
-Left CTRL: toggle crouch
-Left CTRL + F12: pause the script (disable all hotkeys)
-Windows: disable all toggles
-Left Alt: disable all toggles
+Escape: save toggle states, restore them when pressed again (useful in menus)  
+Shift: toggle sprint  
+Left CTRL: toggle crouch  
+Left CTRL + F12: pause the script (disable all hotkeys)  
+Windows: disable all toggles  
+Left Alt: disable all toggles  
