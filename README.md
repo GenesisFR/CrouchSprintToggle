@@ -3,13 +3,12 @@ An AutoHotkey 1.1 script that converts your CTRL/SHIFT keys into toggle keys so 
 
 ## Installation:
 
-You can run the script from anywhere.
+You can run the script from anywhere. Make sure "CrouchSprintToggle.ini" is in the same directory.
 
 ## Usage:
 
-Escape: save toggle states, restore them when pressed again (useful in menus)  
+Please read "CrouchSprintToggle.ini" for more information about setting up the script.
+
 Shift: toggle sprint  
 Left CTRL: toggle crouch  
 Left CTRL + F12: pause the script (disable all hotkeys)  
-Windows: disable all toggles  
-Left Alt: disable all toggles  
