@@ -1,4 +1,4 @@
-; CrouchSprintToggle v1.0
+; CrouchSprintToggle v1.1
 
 #NoEnv                 ; Recommended for performance and compatibility with future AutoHotkey releases.
 #Warn                  ; Enable warnings to assist with detecting common errors.
@@ -13,81 +13,54 @@ OnExit("ExitFunc")
 isCrouching := false
 isSprinting := false
 
-; Suspend script when pressing CTRL+F12
-^F12::Suspend
+; Read window title from an external text file
+IniRead, windowTitle, CrouchSprintToggle.ini, General, windowName
+;MsgBox % windowTitle
 
-; Left control released
-~LCtrl UP::
+; Make the script active only for a specific application
+WinGet, windowID, ID, %windowTitle%
+GroupAdd, windowIDGroup, ahk_id %windowID%
+#IfWinActive ahk_group windowIDGroup
+
+	; Left control released
+	~LCtrl UP::
 	Sprint(false)
 	isCrouching ? Crouch(false) : Crouch(true)
-return
+	return
 
-; Left control pressed
-~LCtrl::
+	; Left control pressed
+	~LCtrl::
 	Sprint(false)
 	SendInput {LCtrl down}
-return
+	return
 
-; Left shift released
-~LShift UP::
+	; Left shift released
+	~LShift UP::
 	Crouch(false)
 	isSprinting ? Sprint(false) : Sprint(true)
-return
+	return
 
-; Left shift pressed
-~LShift::
+	; Left shift pressed
+	~LShift::
 	Crouch(false)
 	SendInput {LShift down}
-return
-
-; Escape pressed
-~*Esc::
-	; Save toggle states
-	wasCrouching := isCrouching
-	wasSprinting := isSprinting
-	Crouch(false)
-	Sprint(false)
-
-	; Trigger Escape
-	SendInput {Esc down}
-	KeyWait, Esc
-	SendInput {Esc up}
-
-	; Restore toggle states
-	if (wasCrouching)
-		Crouch(true)
-	else if (wasSprinting)
-		Sprint(true)
-
 	return
 
-; Disable toggles when pressing the Windows/LAlt keys to keep the normal behavior 
-*LWin::
-*RWin::
-	Crouch(false)
-	Sprint(false)
-	KeyWait, %A_ThisHotkey%
-	SendInput % InStr(A_ThisHotkey, "LWin") ? "{LWin down}{LWin up}" : "{RWin down}{RWin up}"
-	return
+	; Toggle crouch 
+	Crouch(ByRef pIsCrouching)
+	{
+		global isCrouching := pIsCrouching
+		SendInput % isCrouching ? "{LCtrl down}" : "{LCtrl up}"
+	}
 
-~*LAlt::
-	Crouch(false)
-	Sprint(false)
-	return
+	; Toggle sprint
+	Sprint(ByRef pIsSprinting)
+	{
+		global isSprinting := pIsSprinting
+		SendInput % isSprinting ? "{LShift down}" : "{LShift up}"
+	}
 
-; Toggle crouch 
-Crouch(ByRef pIsCrouching)
-{
-	global isCrouching := pIsCrouching
-	SendInput % isCrouching ? "{LCtrl down}" : "{LCtrl up}"
-}
-
-; Toggle sprint
-Sprint(ByRef pIsSprinting)
-{
-	global isSprinting := pIsSprinting
-	SendInput % isSprinting ? "{LShift down}" : "{LShift up}"
-}
+#IfWinActive
 
 ; Exit script
 ExitFunc(ExitReason, ExitCode)
@@ -96,3 +69,6 @@ ExitFunc(ExitReason, ExitCode)
 	Sprint(false)
 	ExitApp
 }
+
+; Suspend script when pressing CTRL+F12
+^F12::Suspend
