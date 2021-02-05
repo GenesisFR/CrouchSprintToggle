@@ -1,4 +1,4 @@
-# CrouchSprintToggle
+# HoldToggles
 An AutoHotkey 1.1 script that converts your CTRL/SHIFT keys and right-click into toggle keys so that you don't have to hold them to crouch, sprint or aim in games. CTRL/SHIFT are mutually exclusive.
 
 ## Installation:
