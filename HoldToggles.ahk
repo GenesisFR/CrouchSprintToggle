@@ -22,6 +22,12 @@ IniRead, isCrouchToggle, HoldToggles.ini, General, isCrouchToggle
 IniRead, isSprintToggle, HoldToggles.ini, General, isSprintToggle
 IniRead, isDebug, HoldToggles.ini, General, isDebug
 
+if (windowName == "ERROR")
+{
+	MsgBox, 16, Error, HoldToggles.ini not found! The script will now exit.
+	ExitApp, -1
+}
+
 if (isDebug == "true")
 {
 	MsgBox % "windowName = " . windowName
