@@ -1,11 +1,12 @@
 ; HoldToggles v1.2
 
-#NoEnv                 ; Recommended for performance and compatibility with future AutoHotkey releases.
-#Warn                  ; Enable warnings to assist with detecting common errors.
-SendMode Input         ; Recommended for new scripts due to its superior speed and reliability.
-#SingleInstance force  ; Allow only a single instance of the script to run.
-#UseHook               ; Allow listening for non-modifier keys.
-#MaxThreadsPerHotkey 1
+;#Requires AutoHotkey 1.1.30.03+ ; AHK Studio doesn't support this yet
+#NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
+#Warn                            ; Enable warnings to assist with detecting common errors.
+SendMode Input                   ; Recommended for new scripts due to its superior speed and reliability.
+#SingleInstance force            ; Allow only a single instance of the script to run.
+#UseHook                         ; Allow listening for non-modifier keys.
+#MaxThreadsPerHotkey 1           ; Prevent accidental double-presses
 
 ; Register a function to be called on exit
 OnExit("ExitFunc")
@@ -15,18 +16,19 @@ isClicking := false
 isCrouching := false
 isSprinting := false
 
-; Read options from an external configuration file
+; Config file is missing, exit
+if (!FileExist("HoldToggles.ini"))
+{
+	MsgBox, 16, Error, HoldToggles.ini not found! The script will now exit.
+	ExitApp, -1
+}
+
+; Read options from config file
 IniRead, windowName, HoldToggles.ini, General, windowName
 IniRead, isAimToggle, HoldToggles.ini, General, isAimToggle
 IniRead, isCrouchToggle, HoldToggles.ini, General, isCrouchToggle
 IniRead, isSprintToggle, HoldToggles.ini, General, isSprintToggle
 IniRead, isDebug, HoldToggles.ini, General, isDebug
-
-if (windowName == "ERROR")
-{
-	MsgBox, 16, Error, HoldToggles.ini not found! The script will now exit.
-	ExitApp, -1
-}
 
 if (isDebug == "true")
 {
@@ -97,11 +99,7 @@ GroupAdd, windowIDGroup, ahk_id %windowID%
 	Click(ByRef pIsClicking)
 	{
 		global isClicking := pIsClicking
-		
-		if (isClicking)
-			Click Down Right
-		else
-			Click Up Right
+		SendInput % isClicking ? "{Click Down Right}" : "{Click Up Right}"
 	}
 	
 	; Toggle crouch 
