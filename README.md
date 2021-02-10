@@ -15,7 +15,9 @@ SHIFT: toggle sprint
 Right-click: toggle aim  
 Left CTRL + F12: pause the script (disable all hotkeys)  
 
+For games run as admin, you must also run the script as admin for it to work.
+
 ## Limitations
 
 I've only tested the script in Half-Life 2 and Unity games.  
-It will not work in games that prevent keys from being simulated (ex: Gears of War 1).
+It will not work in games that prevent keys from being simulated (ex: games using anti-cheats).
