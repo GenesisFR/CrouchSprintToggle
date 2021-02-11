@@ -1,18 +1,19 @@
-; HoldToggles v1.2
+; HoldToggles v1.3
 
-;#Requires AutoHotkey 1.1.30.03+ ; AHK Studio doesn't support this yet
+#MaxThreadsPerHotkey 1           ; Prevent accidental double-presses
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
-#Warn                            ; Enable warnings to assist with detecting common errors.
-SendMode Input                   ; Recommended for new scripts due to its superior speed and reliability.
+;#Requires AutoHotkey 1.1.30.03+ ; AHK Studio doesn't support this yet
 #SingleInstance force            ; Allow only a single instance of the script to run.
 #UseHook                         ; Allow listening for non-modifier keys.
-#MaxThreadsPerHotkey 1           ; Prevent accidental double-presses
+#Warn                            ; Enable warnings to assist with detecting common errors.
+SendMode Input                   ; Recommended for new scripts due to its superior speed and reliability.
+SetWorkingDir %A_ScriptDir%      ; Ensures a consistent starting directory.
 
 ; Register a function to be called on exit
 OnExit("ExitFunc")
 
 ; State variables
-isClicking := false
+isAiming := false
 isCrouching := false
 isSprinting := false
 
@@ -25,107 +26,107 @@ if (!FileExist("HoldToggles.ini"))
 
 ; Read options from config file
 IniRead, windowName, HoldToggles.ini, General, windowName
-IniRead, isAimToggle, HoldToggles.ini, General, isAimToggle
-IniRead, isCrouchToggle, HoldToggles.ini, General, isCrouchToggle
-IniRead, isSprintToggle, HoldToggles.ini, General, isSprintToggle
+IniRead, isAimToggle, HoldToggles.ini, General, isAimToggle, 1
+IniRead, isCrouchToggle, HoldToggles.ini, General, isCrouchToggle, 1
+IniRead, isSprintToggle, HoldToggles.ini, General, isSprintToggle, 1
+IniRead, aimKey, HoldToggles.ini, General, aimKey, RButton
+IniRead, crouchKey, HoldToggles.ini, General, crouchKey, LCtrl
+IniRead, sprintKey, HoldToggles.ini, General, sprintKey, LShift
 IniRead, isDebug, HoldToggles.ini, General, isDebug
 
-if (isDebug == "true")
+if (isDebug)
 {
-	MsgBox % "windowName = " . windowName
-	MsgBox % "isAimToggleEnabled = " . isAimToggle
-	MsgBox % "isCrouchToggleEnabled = " . isCrouchToggle
-	MsgBox % "isSprintToggleEnabled = " . isSprintToggle
+	arrValues := [windowName, isAimToggle, isCrouchToggle, isSprintToggle, aimKey, crouchKey, sprintKey]
+	MsgBox, % Format("windowName: {}`nisAimToggleEnabled: {}`nisCrouchToggleEnabled: {}`nisSprintToggleEnabled: {}`naimKey: {}`ncrouchKey: {}`nsprintKey: {}", arrValues*)
 }
 
-; Make the script active only for a specific application
+; Make the hotkeys active only for a specific application
+WinWaitActive, %windowName%
 WinGet, windowID, ID, %windowName%
 GroupAdd, windowIDGroup, ahk_id %windowID%
-#IfWinActive ahk_group windowIDGroup
+Hotkey, IfWinActive, ahk_group windowIDGroup
 
-	; Right mouse button released
-	*RButton Up::
-	if (isAimToggle == "true")
-	{
-		isClicking ? Click(false) : Click(true)
-	}
-	return
+if (isAimToggle)
+	Hotkey, %aimKey%, aimLabel
+if (isCrouchToggle)
+	Hotkey, %crouchKey%, crouchLabel
+if (isSprintToggle)
+	Hotkey, %sprintKey%, sprintLabel
 
-	; Right mouse button pressed
-	*RButton::
-	if (isAimToggle == "true")
-	{
-		Click Down Right
-	}
-	return
-	
-	; Left control released
-	~LCtrl UP::
-	if (isCrouchToggle == "true")
-	{
-		Sprint(false)
-		isCrouching ? Crouch(false) : Crouch(true)
-	}
-	return
+return
 
-	; Left control pressed
-	~LCtrl::
-	if (isCrouchToggle == "true")
-	{
-		Sprint(false)
-		SendInput {LCtrl down}
-	}
-	return
+aimLabel:
+if (isDebug)
+	MsgBox % "Aim " . (!isAiming ? "pressed" : "released")
 
-	; Left shift released
-	~LShift UP::
-	if (isSprintToggle == "true")
-	{
-		Crouch(false)
-		isSprinting ? Sprint(false) : Sprint(true)
-	}
-	return
-	
-	; Left shift pressed
-	~LShift::
-	if (isSprintToggle ==  "true")
-	{
-		Crouch(false)
-		SendInput {LShift down}
-	}
-	return
+Aim(!isAiming)
+return
 
-	; Toggle click 
-	Click(ByRef pIsClicking)
-	{
-		global isClicking := pIsClicking
-		SendInput % isClicking ? "{Click Down Right}" : "{Click Up Right}"
-	}
-	
-	; Toggle crouch 
-	Crouch(ByRef pIsCrouching)
-	{
-		global isCrouching := pIsCrouching
-		SendInput % isCrouching ? "{LCtrl down}" : "{LCtrl up}"
-	}
+crouchLabel:
+if (isDebug)
+	MsgBox % "Crouch " . (!isCrouching ? "pressed" : "released")
 
-	; Toggle sprint
-	Sprint(ByRef pIsSprinting)
-	{
-		global isSprinting := pIsSprinting
-		SendInput % isSprinting ? "{LShift down}" : "{LShift up}"
-	}
+Crouch(!isCrouching)
+return
 
-#IfWinActive
+sprintLabel:
+if (isDebug)
+	MsgBox % "Sprint " . (!isSprinting ? "pressed" : "released")
+
+Sprint(!isSprinting)
+return
+
+; Toggle aim 
+Aim(ByRef pIsAiming)
+{
+	global isAiming := pIsAiming
+	global aimKey
+	SendInput % isAiming ? "{" . aimKey . " down}" : "{" . aimKey . " up}"
+}
+
+; Toggle crouch 
+Crouch(ByRef pIsCrouching)
+{
+	global isCrouching := pIsCrouching
+	global crouchKey
+	SendInput % isCrouching ? "{" . crouchKey . " down}" : "{" . crouchKey . " up}"
+}
+
+; Toggle sprint
+Sprint(ByRef pIsSprinting)
+{
+	global isSprinting := pIsSprinting
+	global sprintKey
+	SendInput % isSprinting ? "{" . sprintKey . " down}" : "{" . sprintKey . " up}"
+}
+
+; Disable all toggles
+DisableAllToggles()
+{
+	Aim(false)
+	Crouch(false)
+	Sprint(false)
+}
 
 ; Exit script
 ExitFunc(ExitReason, ExitCode)
 {
-	Click(false)
-	Crouch(false)
-	Sprint(false)
+	DisableAllToggles()
 	ExitApp
 }
 
-; Suspend script when pressing CTRL+F12
-^F12::Suspend
+; Suspend script (useful when in menus)
+!F12:: ; ALT+F12
+Suspend
+
+; Single beep when suspended
+if (A_IsSuspended)
+	SoundBeep, 1000
+; Double beep when resumed
+else
+{
+	SoundBeep, 1000
+	SoundBeep, 1000
+}
+
+DisableAllToggles()
