@@ -3,6 +3,7 @@
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
 ;#Requires AutoHotkey 1.1.30.03+ ; AHK Studio doesn't support this yet
+#Persistent
 #SingleInstance force            ; Allow only a single instance of the script to run.
 #UseHook                         ; Allow listening for non-modifier keys.
 #Warn                            ; Enable warnings to assist with detecting common errors.
@@ -53,6 +54,7 @@ if (isCrouchToggle)
 if (isSprintToggle)
 	Hotkey, %sprintKey%, sprintLabel
 
+SetTimer, SetTogglesOnFocus, 1000
 return
 
 aimLabel:
@@ -74,6 +76,31 @@ if (isDebug)
 	MsgBox % "Sprint " . (!isSprinting ? "pressed" : "released")
 
 Sprint(!isSprinting)
+return
+
+; Disable toggles on focus lost and restore them on focus
+SetTogglesOnFocus:
+If WinActive(windowName)
+{
+	WinWaitNotActive, %windowName%
+
+	; Save toggle states
+	global isAiming
+	global isCrouching 
+	global isSprinting 
+	tempIsAiming := isAiming
+	tempIsCrouching := isCrouching
+	tempIsSprinting := isSprinting
+
+	DisableAllToggles()
+
+	; Restore toggle states
+	WinWaitActive, %windowName%
+	Aim(tempIsAiming)
+	Crouch(tempIsCrouching)
+	Sprint(tempIsSprinting)
+}
+
 return
 
 ; Toggle aim 
