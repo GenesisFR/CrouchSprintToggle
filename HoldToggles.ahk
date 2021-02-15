@@ -20,10 +20,7 @@ isSprinting := false
 
 ; Config file is missing, exit
 if (!FileExist("HoldToggles.ini"))
-{
-	MsgBox, 16, Error, HoldToggles.ini not found! The script will now exit.
-	ExitApp, -1
-}
+	ExitWithErrorMessage("HoldToggles.ini not found! The script will now exit.")
 
 ; Read options from config file
 IniRead, windowName, HoldToggles.ini, General, windowName
@@ -34,15 +31,15 @@ IniRead, aimKey, HoldToggles.ini, General, aimKey, RButton
 IniRead, crouchKey, HoldToggles.ini, General, crouchKey, LCtrl
 IniRead, sprintKey, HoldToggles.ini, General, sprintKey, LShift
 IniRead, hookDelay, HoldToggles.ini, General, hookDelay, 0
-IniRead, isDebug, HoldToggles.ini, General, isDebug
+IniRead, isDebug, HoldToggles.ini, General, isDebug, 0
 
 if (isDebug)
 {
-	arrValues := [windowName, isAimToggle, isCrouchToggle, isSprintToggle, aimKey, crouchKey, sprintKey]
-	MsgBox, % Format("windowName: {}`nisAimToggleEnabled: {}`nisCrouchToggleEnabled: {}`nisSprintToggleEnabled: {}`naimKey: {}`ncrouchKey: {}`nsprintKey: {}", arrValues*)
+	arrValues := [windowName, isAimToggle, isCrouchToggle, isSprintToggle, aimKey, crouchKey, sprintKey, hookDelay]
+	MsgBox, % Format("windowName: {}`nisAimToggleEnabled: {}`nisCrouchToggleEnabled: {}`nisSprintToggleEnabled: {}`naimKey: {}`ncrouchKey: {}`nsprintKey: {}`nhookDelay: {}", arrValues*)
 }
 
-; Make the hotkeys active only for a specific application
+; Make the hotkeys active only for a specific window
 WinWaitActive, %windowName%
 Sleep, %hookDelay%
 WinGet, windowID, ID, %windowName%
@@ -95,9 +92,9 @@ If WinActive(windowName)
 	tempIsSprinting := isSprinting
 
 	DisableAllToggles()
+	WinWaitActive, %windowName%
 
 	; Restore toggle states
-	WinWaitActive, %windowName%
 	Aim(tempIsAiming)
 	Crouch(tempIsCrouching)
 	Sprint(tempIsSprinting)
@@ -137,13 +134,6 @@ DisableAllToggles()
 	Sprint(false)
 }
 
-; Exit script
-ExitFunc(ExitReason, ExitCode)
-{
-	DisableAllToggles()
-	ExitApp
-}
-
 ; Suspend script (useful when in menus)
 !F12:: ; ALT+F12
 Suspend
@@ -159,3 +149,18 @@ else
 }
 
 DisableAllToggles()
+return
+
+; Display an error message and exit
+ExitWithErrorMessage(ErrorMessage)
+{
+	MsgBox, 16, Error, %ErrorMessage%
+	ExitApp, -1
+}
+
+; Exit script
+ExitFunc(ExitReason, ExitCode)
+{
+	DisableAllToggles()
+	ExitApp
+}
