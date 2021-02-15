@@ -1,4 +1,4 @@
-; HoldToggles v1.3
+; HoldToggles v1.31
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -33,6 +33,7 @@ IniRead, isSprintToggle, HoldToggles.ini, General, isSprintToggle, 1
 IniRead, aimKey, HoldToggles.ini, General, aimKey, RButton
 IniRead, crouchKey, HoldToggles.ini, General, crouchKey, LCtrl
 IniRead, sprintKey, HoldToggles.ini, General, sprintKey, LShift
+IniRead, hookDelay, HoldToggles.ini, General, hookDelay, 0
 IniRead, isDebug, HoldToggles.ini, General, isDebug
 
 if (isDebug)
@@ -43,6 +44,7 @@ if (isDebug)
 
 ; Make the hotkeys active only for a specific application
 WinWaitActive, %windowName%
+Sleep, %hookDelay%
 WinGet, windowID, ID, %windowName%
 GroupAdd, windowIDGroup, ahk_id %windowID%
 Hotkey, IfWinActive, ahk_group windowIDGroup
