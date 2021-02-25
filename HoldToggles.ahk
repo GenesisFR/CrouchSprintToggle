@@ -1,9 +1,9 @@
 ; HoldToggles v1.31
 
-#MaxThreadsPerHotkey 1           ; Prevent accidental double-presses
+#MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
-;#Requires AutoHotkey 1.1.30.03+ ; AHK Studio doesn't support this yet
-#Persistent
+#Persistent                      ; Keep the script permanently running since we use a timer.
+#Requires AutoHotkey v1.1.33.02+ ; Display an error and quit if this version requirement is not met.
 #SingleInstance force            ; Allow only a single instance of the script to run.
 #UseHook                         ; Allow listening for non-modifier keys.
 #Warn                            ; Enable warnings to assist with detecting common errors.
