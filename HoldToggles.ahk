@@ -1,4 +1,4 @@
-; HoldToggles v1.31
+; HoldToggles v1.32
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -27,11 +27,12 @@ IniRead, windowName, HoldToggles.ini, General, windowName
 IniRead, isAimToggle, HoldToggles.ini, General, isAimToggle, 1
 IniRead, isCrouchToggle, HoldToggles.ini, General, isCrouchToggle, 1
 IniRead, isSprintToggle, HoldToggles.ini, General, isSprintToggle, 1
-IniRead, aimKey, HoldToggles.ini, General, aimKey, RButton
-IniRead, crouchKey, HoldToggles.ini, General, crouchKey, LCtrl
-IniRead, sprintKey, HoldToggles.ini, General, sprintKey, LShift
 IniRead, hookDelay, HoldToggles.ini, General, hookDelay, 0
-IniRead, isDebug, HoldToggles.ini, General, isDebug, 0
+IniRead, restoreTogglesOnFocus, HoldToggles.ini, General, restoreTogglesOnFocus, 1
+IniRead, aimKey, HoldToggles.ini, Keys, aimKey, RButton
+IniRead, crouchKey, HoldToggles.ini, Keys, crouchKey, LCtrl
+IniRead, sprintKey, HoldToggles.ini, Keys, sprintKey, LShift
+IniRead, isDebug, HoldToggles.ini, Debug, isDebug, 0
 
 if (isDebug)
 {
@@ -82,7 +83,7 @@ SetTogglesOnFocus:
 If WinActive(windowName)
 {
 	WinWaitNotActive, %windowName%
-
+	
 	; Save toggle states
 	global isAiming
 	global isCrouching 
@@ -90,14 +91,17 @@ If WinActive(windowName)
 	tempIsAiming := isAiming
 	tempIsCrouching := isCrouching
 	tempIsSprinting := isSprinting
-
+	
 	DisableAllToggles()
-	WinWaitActive, %windowName%
-
+	
 	; Restore toggle states
-	Aim(tempIsAiming)
-	Crouch(tempIsCrouching)
-	Sprint(tempIsSprinting)
+	if (restoreTogglesOnFocus)
+	{
+		WinWaitActive, %windowName%
+		Aim(tempIsAiming)
+		Crouch(tempIsCrouching)
+		Sprint(tempIsSprinting)
+	}
 }
 
 return
