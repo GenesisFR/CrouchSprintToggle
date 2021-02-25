@@ -108,6 +108,7 @@ Aim(ByRef pIsAiming)
 	global isAiming := pIsAiming
 	global aimKey
 	SendInput % isAiming ? "{" . aimKey . " down}" : "{" . aimKey . " up}"
+	KeyWait, %aimKey%
 }
 
 ; Toggle crouch 
@@ -116,6 +117,7 @@ Crouch(ByRef pIsCrouching)
 	global isCrouching := pIsCrouching
 	global crouchKey
 	SendInput % isCrouching ? "{" . crouchKey . " down}" : "{" . crouchKey . " up}"
+	KeyWait, %crouchKey%
 }
 
 ; Toggle sprint
@@ -124,6 +126,7 @@ Sprint(ByRef pIsSprinting)
 	global isSprinting := pIsSprinting
 	global sprintKey
 	SendInput % isSprinting ? "{" . sprintKey . " down}" : "{" . sprintKey . " up}"
+	KeyWait, %sprintKey%
 }
 
 ; Disable all toggles
