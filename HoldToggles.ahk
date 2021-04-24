@@ -83,7 +83,7 @@ SetTogglesOnFocus:
 If WinActive(windowName)
 {
 	WinWaitNotActive, %windowName%
-	
+
 	; Save toggle states
 	global isAiming
 	global isCrouching 
@@ -91,9 +91,9 @@ If WinActive(windowName)
 	tempIsAiming := isAiming
 	tempIsCrouching := isCrouching
 	tempIsSprinting := isSprinting
-	
+
 	DisableAllToggles()
-	
+
 	; Restore toggle states
 	if (restoreTogglesOnFocus)
 	{
