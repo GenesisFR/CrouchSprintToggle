@@ -1,14 +1,14 @@
-# HoldToggles
+# KeyToggles
 An AutoHotkey 1.1 script that makes keys and mouse buttons togglable so that you don't have to hold them to crouch, sprint or aim in games.
 
 ## Installation
 
-You can run the script from anywhere as long as "HoldToggles.ini" is in the same directory than the script.  
+You can run the script from anywhere as long as "KeyToggles.ini" is in the same directory than the script.  
 
 ## Usage
 
-The script will only be active when the game's window is in focus. Please read "HoldToggles.ini" for more information about setting it up.  
-Make sure that your keys or mouse buttons in "HoldToggles.ini" are the same than the ones in the game.
+The script will only be active when the game's window is in focus. Please read "KeyToggles.ini" for more information about setting it up.  
+Make sure that your keys or mouse buttons in "KeyToggles.ini" are the same than the ones in the game.
 
 Default keys:
 

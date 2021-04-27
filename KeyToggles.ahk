@@ -1,4 +1,4 @@
-; HoldToggles v1.32
+; KeyToggles v1.32
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -19,20 +19,20 @@ isCrouching := false
 isSprinting := false
 
 ; Config file is missing, exit
-if (!FileExist("HoldToggles.ini"))
-	ExitWithErrorMessage("HoldToggles.ini not found! The script will now exit.")
+if (!FileExist("KeyToggles.ini"))
+	ExitWithErrorMessage("KeyToggles.ini not found! The script will now exit.")
 
 ; Read options from config file
-IniRead, windowName, HoldToggles.ini, General, windowName
-IniRead, isAimToggle, HoldToggles.ini, General, isAimToggle, 1
-IniRead, isCrouchToggle, HoldToggles.ini, General, isCrouchToggle, 1
-IniRead, isSprintToggle, HoldToggles.ini, General, isSprintToggle, 1
-IniRead, hookDelay, HoldToggles.ini, General, hookDelay, 0
-IniRead, restoreTogglesOnFocus, HoldToggles.ini, General, restoreTogglesOnFocus, 1
-IniRead, aimKey, HoldToggles.ini, Keys, aimKey, RButton
-IniRead, crouchKey, HoldToggles.ini, Keys, crouchKey, LCtrl
-IniRead, sprintKey, HoldToggles.ini, Keys, sprintKey, LShift
-IniRead, isDebug, HoldToggles.ini, Debug, isDebug, 0
+IniRead, windowName, KeyToggles.ini, General, windowName
+IniRead, isAimToggle, KeyToggles.ini, General, isAimToggle, 1
+IniRead, isCrouchToggle, KeyToggles.ini, General, isCrouchToggle, 1
+IniRead, isSprintToggle, KeyToggles.ini, General, isSprintToggle, 1
+IniRead, hookDelay, KeyToggles.ini, General, hookDelay, 0
+IniRead, restoreTogglesOnFocus, KeyToggles.ini, General, restoreTogglesOnFocus, 1
+IniRead, aimKey, KeyToggles.ini, Keys, aimKey, RButton
+IniRead, crouchKey, KeyToggles.ini, Keys, crouchKey, LCtrl
+IniRead, sprintKey, KeyToggles.ini, Keys, sprintKey, LShift
+IniRead, isDebug, KeyToggles.ini, Debug, isDebug, 0
 
 if (isDebug)
 {
