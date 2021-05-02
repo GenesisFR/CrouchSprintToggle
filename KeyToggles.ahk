@@ -18,21 +18,23 @@ isAiming := false
 isCrouching := false
 isSprinting := false
 
+configFileName := RTrim(A_ScriptName, A_IsCompiled ? ".exe" : ".ahk") . ".ini"
+
 ; Config file is missing, exit
-if (!FileExist("KeyToggles.ini"))
-	ExitWithErrorMessage("KeyToggles.ini not found! The script will now exit.")
+if (!FileExist(configFileName))
+	ExitWithErrorMessage(configFileName . " not found! The script will now exit.")
 
 ; Read options from config file
-IniRead, windowName, KeyToggles.ini, General, windowName
-IniRead, isAimToggle, KeyToggles.ini, General, isAimToggle, 1
-IniRead, isCrouchToggle, KeyToggles.ini, General, isCrouchToggle, 1
-IniRead, isSprintToggle, KeyToggles.ini, General, isSprintToggle, 1
-IniRead, hookDelay, KeyToggles.ini, General, hookDelay, 0
-IniRead, restoreTogglesOnFocus, KeyToggles.ini, General, restoreTogglesOnFocus, 1
-IniRead, aimKey, KeyToggles.ini, Keys, aimKey, RButton
-IniRead, crouchKey, KeyToggles.ini, Keys, crouchKey, LCtrl
-IniRead, sprintKey, KeyToggles.ini, Keys, sprintKey, LShift
-IniRead, isDebug, KeyToggles.ini, Debug, isDebug, 0
+IniRead, windowName, %configFileName%, General, windowName
+IniRead, isAimToggle, %configFileName%, General, isAimToggle, 1
+IniRead, isCrouchToggle, %configFileName%, General, isCrouchToggle, 1
+IniRead, isSprintToggle, %configFileName%, General, isSprintToggle, 1
+IniRead, hookDelay, %configFileName%, General, hookDelay, 0
+IniRead, restoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 1
+IniRead, aimKey, %configFileName%, Keys, aimKey, RButton
+IniRead, crouchKey, %configFileName%, Keys, crouchKey, LCtrl
+IniRead, sprintKey, %configFileName%, Keys, sprintKey, LShift
+IniRead, isDebug, %configFileName%, Debug, isDebug, 0
 
 if (isDebug)
 {
