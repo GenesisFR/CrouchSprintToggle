@@ -23,6 +23,7 @@ tempIsSprinting := false
 windowID := 0
 
 configFileName := RTrim(A_ScriptName, A_IsCompiled ? ".exe" : ".ahk") . ".ini"
+OutputDebug, init::configFileName %configFileName%
 
 ; Config file is missing, exit
 if (!FileExist(configFileName))
@@ -34,15 +35,27 @@ SetTimer, OnFocusChanged, %focusCheckDelay%
 return
 
 aimLabel:
+
+OutputDebug, aimLabel::%thisHotkey% begin
 Aim(!isAiming)
+OutputDebug, aimLabel::%thisHotkey% end
+
 return
 
 crouchLabel:
+
+OutputDebug, crouchLabel::%thisHotkey% begin
 Crouch(!isCrouching)
+OutputDebug, crouchLabel::%thisHotkey% end
+
 return
 
 sprintLabel:
+
+OutputDebug, sprintLabel::%thisHotkey% begin
 Sprint(!isSprinting)
+OutputDebug, sprintLabel::%thisHotkey% end
+
 return
 
 ; Toggle aim 
@@ -50,9 +63,12 @@ Aim(ByRef pIsAiming)
 {
 	global
 
+	OutputDebug, Aim::begin
 	isAiming := pIsAiming
+	OutputDebug, Aim::isAiming %isAiming%
 	SendInput % isAiming ? "{" . aimKey . " down}" : "{" . aimKey . " up}"
 	KeyWait, %aimKey%
+	OutputDebug, Aim::end
 }
 
 ; Toggle crouch 
@@ -60,9 +76,12 @@ Crouch(ByRef pIsCrouching)
 {
 	global
 
+	OutputDebug, Crouch::begin
 	isCrouching := pIsCrouching
+	OutputDebug, Crouch::isCrouching %isCrouching%
 	SendInput % isCrouching ? "{" . crouchKey . " down}" : "{" . crouchKey . " up}"
 	KeyWait, %crouchKey%
+	OutputDebug, Crouch::end
 }
 
 ; Disable all toggles
@@ -79,11 +98,15 @@ HookWindow()
 	global
 
 	; Make the hotkeys active only for a specific window
+	OutputDebug, HookWindow::begin
 	WinWaitActive, %windowName%
+	OutputDebug, HookWindow::WinWaitActive
 	Sleep, %hookDelay%
 	WinGet, windowID, ID, %windowName%
+	OutputDebug, HookWindow::WinGet %windowID%
 	GroupAdd, windowIDGroup, ahk_id %windowID%
 	Hotkey, IfWinActive, ahk_group windowIDGroup
+	OutputDebug, HookWindow::end
 }
 
 ; Disable toggles on focus lost and optionally restore them on focus
@@ -91,6 +114,8 @@ OnFocusChanged()
 {
 	global
 
+	OutputDebug, OnFocusChanged::begin
+	
 	; Make sure to hook the window again if it no longer exists
 	if (!WinExist(windowName) || !windowID)
 	{
@@ -99,6 +124,7 @@ OnFocusChanged()
 	}
 	else
 	{
+		OutputDebug, OnFocusChanged::WinWaitActive
 		WinWaitActive, %windowName%
 	}
 	
@@ -110,6 +136,7 @@ OnFocusChanged()
 		Sprint(tempIsSprinting)
 	}
 	
+	OutputDebug, OnFocusChanged::WinWaitNotActive
 	WinWaitNotActive, %windowName%
 
 	; Save toggle states
@@ -118,6 +145,7 @@ OnFocusChanged()
 	tempIsSprinting := isSprinting
 
 	DisableAllToggles()
+	OutputDebug, OnFocusChanged::end
 }
 
 ReadConfigFile()
@@ -158,9 +186,12 @@ Sprint(ByRef pIsSprinting)
 {
 	global
 
+	OutputDebug, Sprint::begin
 	isSprinting := pIsSprinting
+	OutputDebug, Sprint::isSprinting %isSprinting%
 	SendInput % isSprinting ? "{" . sprintKey . " down}" : "{" . sprintKey . " up}"
 	KeyWait, %sprintKey%
+	OutputDebug, Sprint::end
 }
 
 ; Exit script
