@@ -17,6 +17,10 @@ OnExit("ExitFunc")
 isAiming := false
 isCrouching := false
 isSprinting := false
+tempIsAiming := false
+tempIsCrouching := false
+tempIsSprinting := false
+windowID := 0
 
 configFileName := RTrim(A_ScriptName, A_IsCompiled ? ".exe" : ".ahk") . ".ini"
 
@@ -25,10 +29,8 @@ if (!FileExist(configFileName))
 	ExitWithErrorMessage(configFileName . " not found! The script will now exit.")
 
 ReadConfigFile()
-HookWindow()
-RegisterHotkeys()
+SetTimer, OnFocusChanged, %focusCheckDelay%
 
-SetTimer, SetTogglesOnFocus, %focusCheckDelay%
 return
 
 aimLabel:
@@ -41,31 +43,6 @@ return
 
 sprintLabel:
 Sprint(!isSprinting)
-return
-
-; Disable toggles on focus lost and optionally restore them on focus
-SetTogglesOnFocus:
-if WinActive(windowName)
-{
-	WinWaitNotActive, %windowName%
-
-	; Save toggle states
-	tempIsAiming := isAiming
-	tempIsCrouching := isCrouching
-	tempIsSprinting := isSprinting
-
-	DisableAllToggles()
-
-	; Restore toggle states
-	if (restoreTogglesOnFocus)
-	{
-		WinWaitActive, %windowName%
-		Aim(tempIsAiming)
-		Crouch(tempIsCrouching)
-		Sprint(tempIsSprinting)
-	}
-}
-
 return
 
 ; Toggle aim 
@@ -107,6 +84,40 @@ HookWindow()
 	WinGet, windowID, ID, %windowName%
 	GroupAdd, windowIDGroup, ahk_id %windowID%
 	Hotkey, IfWinActive, ahk_group windowIDGroup
+}
+
+; Disable toggles on focus lost and optionally restore them on focus
+OnFocusChanged()
+{
+	global
+
+	; Make sure to hook the window again if it no longer exists
+	if (!WinExist(windowName) || !windowID)
+	{
+		HookWindow()
+		RegisterHotkeys()
+	}
+	else
+	{
+		WinWaitActive, %windowName%
+	}
+	
+	; Restore toggle states
+	if (restoreTogglesOnFocus)
+	{
+		Aim(tempIsAiming)
+		Crouch(tempIsCrouching)
+		Sprint(tempIsSprinting)
+	}
+	
+	WinWaitNotActive, %windowName%
+
+	; Save toggle states
+	tempIsAiming := isAiming
+	tempIsCrouching := isCrouching
+	tempIsSprinting := isSprinting
+
+	DisableAllToggles()
 }
 
 ReadConfigFile()
