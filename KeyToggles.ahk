@@ -28,7 +28,7 @@ ReadConfigFile()
 HookWindow()
 RegisterHotkeys()
 
-SetTimer, SetTogglesOnFocus, 1000
+SetTimer, SetTogglesOnFocus, %focusCheckDelay%
 return
 
 aimLabel:
@@ -43,7 +43,7 @@ sprintLabel:
 Sprint(!isSprinting)
 return
 
-; Disable toggles on focus lost and restore them on focus
+; Disable toggles on focus lost and optionally restore them on focus
 SetTogglesOnFocus:
 if WinActive(windowName)
 {
@@ -120,6 +120,7 @@ ReadConfigFile()
 	IniRead, bCrouchToggle, %configFileName%, General, bCrouchToggle, 1
 	IniRead, bSprintToggle, %configFileName%, General, bSprintToggle, 1
 	IniRead, hookDelay, %configFileName%, General, hookDelay, 0
+	IniRead, focusCheckDelay, %configFileName%, General, focusCheckDelay, 1000
 	IniRead, restoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 1
 
 	; Keys
