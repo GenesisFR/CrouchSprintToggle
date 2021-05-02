@@ -24,31 +24,9 @@ configFileName := RTrim(A_ScriptName, A_IsCompiled ? ".exe" : ".ahk") . ".ini"
 if (!FileExist(configFileName))
 	ExitWithErrorMessage(configFileName . " not found! The script will now exit.")
 
-; Read options from config file
-IniRead, windowName, %configFileName%, General, windowName
-IniRead, isAimToggle, %configFileName%, General, isAimToggle, 1
-IniRead, isCrouchToggle, %configFileName%, General, isCrouchToggle, 1
-IniRead, isSprintToggle, %configFileName%, General, isSprintToggle, 1
-IniRead, hookDelay, %configFileName%, General, hookDelay, 0
-IniRead, restoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 1
-IniRead, aimKey, %configFileName%, Keys, aimKey, RButton
-IniRead, crouchKey, %configFileName%, Keys, crouchKey, LCtrl
-IniRead, sprintKey, %configFileName%, Keys, sprintKey, LShift
-IniRead, isDebug, %configFileName%, Debug, isDebug, 0
-
-; Make the hotkeys active only for a specific window
-WinWaitActive, %windowName%
-Sleep, %hookDelay%
-WinGet, windowID, ID, %windowName%
-GroupAdd, windowIDGroup, ahk_id %windowID%
-Hotkey, IfWinActive, ahk_group windowIDGroup
-
-if (isAimToggle)
-	Hotkey, %aimKey%, aimLabel
-if (isCrouchToggle)
-	Hotkey, %crouchKey%, crouchLabel
-if (isSprintToggle)
-	Hotkey, %sprintKey%, sprintLabel
+ReadConfigFile()
+HookWindow()
+RegisterHotkeys()
 
 SetTimer, SetTogglesOnFocus, 1000
 return
@@ -67,14 +45,11 @@ return
 
 ; Disable toggles on focus lost and restore them on focus
 SetTogglesOnFocus:
-If WinActive(windowName)
+if WinActive(windowName)
 {
 	WinWaitNotActive, %windowName%
 
 	; Save toggle states
-	global isAiming
-	global isCrouching 
-	global isSprinting 
 	tempIsAiming := isAiming
 	tempIsCrouching := isCrouching
 	tempIsSprinting := isSprinting
@@ -96,8 +71,9 @@ return
 ; Toggle aim 
 Aim(ByRef pIsAiming)
 {
-	global isAiming := pIsAiming
-	global aimKey
+	global
+
+	isAiming := pIsAiming
 	SendInput % isAiming ? "{" . aimKey . " down}" : "{" . aimKey . " up}"
 	KeyWait, %aimKey%
 }
@@ -105,19 +81,11 @@ Aim(ByRef pIsAiming)
 ; Toggle crouch 
 Crouch(ByRef pIsCrouching)
 {
-	global isCrouching := pIsCrouching
-	global crouchKey
+	global
+
+	isCrouching := pIsCrouching
 	SendInput % isCrouching ? "{" . crouchKey . " down}" : "{" . crouchKey . " up}"
 	KeyWait, %crouchKey%
-}
-
-; Toggle sprint
-Sprint(ByRef pIsSprinting)
-{
-	global isSprinting := pIsSprinting
-	global sprintKey
-	SendInput % isSprinting ? "{" . sprintKey . " down}" : "{" . sprintKey . " up}"
-	KeyWait, %sprintKey%
 }
 
 ; Disable all toggles
@@ -126,6 +94,75 @@ DisableAllToggles()
 	Aim(false)
 	Crouch(false)
 	Sprint(false)
+}
+
+HookWindow()
+{
+	; All the variables below are declared as global so they can be used in the whole script
+	global
+
+	; Make the hotkeys active only for a specific window
+	WinWaitActive, %windowName%
+	Sleep, %hookDelay%
+	WinGet, windowID, ID, %windowName%
+	GroupAdd, windowIDGroup, ahk_id %windowID%
+	Hotkey, IfWinActive, ahk_group windowIDGroup
+}
+
+ReadConfigFile()
+{
+	; All the variables below are declared as global so they can be used in the whole script
+	global
+
+	; General
+	IniRead, windowName, %configFileName%, General, windowName
+	IniRead, bAimToggle, %configFileName%, General, bAimToggle, 1
+	IniRead, bCrouchToggle, %configFileName%, General, bCrouchToggle, 1
+	IniRead, bSprintToggle, %configFileName%, General, bSprintToggle, 1
+	IniRead, hookDelay, %configFileName%, General, hookDelay, 0
+	IniRead, restoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 1
+
+	; Keys
+	IniRead, aimKey, %configFileName%, Keys, aimKey, RButton
+	IniRead, crouchKey, %configFileName%, Keys, crouchKey, LCtrl
+	IniRead, sprintKey, %configFileName%, Keys, sprintKey, LShift
+
+	; Debug
+	IniRead, bDebug, %configFileName%, Debug, bDebug, 0
+}
+
+RegisterHotkeys()
+{
+	; All the variables below are declared as global so they can be used in the whole script
+	global
+
+	Hotkey, %aimKey%, aimLabel, % bAimToggle ? "On" : "Off"
+	Hotkey, %crouchKey%, crouchLabel, % bCrouchToggle ? "On" : "Off"
+	Hotkey, %sprintKey%, sprintLabel, % bSprintToggle ? "On" : "Off"
+}
+
+; Toggle sprint
+Sprint(ByRef pIsSprinting)
+{
+	global
+
+	isSprinting := pIsSprinting
+	SendInput % isSprinting ? "{" . sprintKey . " down}" : "{" . sprintKey . " up}"
+	KeyWait, %sprintKey%
+}
+
+; Exit script
+ExitFunc(ExitReason, ExitCode)
+{
+	DisableAllToggles()
+	ExitApp
+}
+
+; Display an error message and exit
+ExitWithErrorMessage(ErrorMessage)
+{
+	MsgBox, 16, Error, %ErrorMessage%
+	ExitApp, -1
 }
 
 ; Suspend script (useful when in menus)
@@ -144,17 +181,3 @@ else
 
 DisableAllToggles()
 return
-
-; Display an error message and exit
-ExitWithErrorMessage(ErrorMessage)
-{
-	MsgBox, 16, Error, %ErrorMessage%
-	ExitApp, -1
-}
-
-; Exit script
-ExitFunc(ExitReason, ExitCode)
-{
-	DisableAllToggles()
-	ExitApp
-}
