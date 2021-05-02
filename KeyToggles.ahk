@@ -36,12 +36,6 @@ IniRead, crouchKey, %configFileName%, Keys, crouchKey, LCtrl
 IniRead, sprintKey, %configFileName%, Keys, sprintKey, LShift
 IniRead, isDebug, %configFileName%, Debug, isDebug, 0
 
-if (isDebug)
-{
-	arrValues := [windowName, isAimToggle, isCrouchToggle, isSprintToggle, aimKey, crouchKey, sprintKey, hookDelay]
-	MsgBox, % Format("windowName: {}`nisAimToggleEnabled: {}`nisCrouchToggleEnabled: {}`nisSprintToggleEnabled: {}`naimKey: {}`ncrouchKey: {}`nsprintKey: {}`nhookDelay: {}", arrValues*)
-}
-
 ; Make the hotkeys active only for a specific window
 WinWaitActive, %windowName%
 Sleep, %hookDelay%
@@ -60,23 +54,14 @@ SetTimer, SetTogglesOnFocus, 1000
 return
 
 aimLabel:
-if (isDebug)
-	MsgBox % "Aim " . (!isAiming ? "pressed" : "released")
-
 Aim(!isAiming)
 return
 
 crouchLabel:
-if (isDebug)
-	MsgBox % "Crouch " . (!isCrouching ? "pressed" : "released")
-
 Crouch(!isCrouching)
 return
 
 sprintLabel:
-if (isDebug)
-	MsgBox % "Sprint " . (!isSprinting ? "pressed" : "released")
-
 Sprint(!isSprinting)
 return
 
