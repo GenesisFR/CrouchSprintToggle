@@ -36,25 +36,25 @@ return
 
 aimLabel:
 
-OutputDebug, aimLabel::%thisHotkey% begin
+OutputDebug, aimLabel::%A_ThisHotkey% begin
 Aim(!isAiming)
-OutputDebug, aimLabel::%thisHotkey% end
+OutputDebug, aimLabel::%A_ThisHotkey% end
 
 return
 
 crouchLabel:
 
-OutputDebug, crouchLabel::%thisHotkey% begin
+OutputDebug, crouchLabel::%A_ThisHotkey% begin
 Crouch(!isCrouching)
-OutputDebug, crouchLabel::%thisHotkey% end
+OutputDebug, crouchLabel::%A_ThisHotkey% end
 
 return
 
 sprintLabel:
 
-OutputDebug, sprintLabel::%thisHotkey% begin
+OutputDebug, sprintLabel::%A_ThisHotkey% begin
 Sprint(!isSprinting)
-OutputDebug, sprintLabel::%thisHotkey% end
+OutputDebug, sprintLabel::%A_ThisHotkey% end
 
 return
 
