@@ -1,8 +1,9 @@
-; KeyToggles v1.32
+; KeyToggles v1.4
 
 ;TODO
-; add application profile support
+; add application profiles
 ; add overlay/notifications
+; add release script
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
