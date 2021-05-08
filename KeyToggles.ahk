@@ -1,8 +1,8 @@
 ; KeyToggles v1.32
 
 ;TODO
-; add autofire support (https://autohotkey.com/board/topic/64576-the-definitive-autofire-thread/)
 ; add application profile support
+; add overlay/notifications
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -26,6 +26,9 @@ AIM_MODE_AUTOFIRE := 3
 bAiming := false
 bCrouching := false
 bSprinting := false
+bAutofireAiming := false
+bAutofireCrouching := false
+bAutofireSprinting := false
 bRestoreAiming := false
 bRestoreCrouching := false
 bRestoreSprinting := false
@@ -56,9 +59,11 @@ switch bAimMode
 		AimHold()
 		return
 	case AIM_MODE_AUTOFIRE:
-		AimAutofire()
+		; Based on https://autohotkey.com/board/topic/64576-the-definitive-autofire-thread/?p=407264
+		bAutofireAiming := !bAutofireAiming
+		SetTimer, AimAutofire, % bAutofireAiming ? autofireKeyDelay : "Off"
+		KeyWait, %aimAutofireKey%
 		return
-	default:
 }
 
 ;OutputDebug, aimLabel::%A_ThisHotkey% end
@@ -78,9 +83,10 @@ switch bCrouchMode
 		CrouchHold()
 		return
 	case AIM_MODE_AUTOFIRE:
-		CrouchAutofire()
+		bAutofireCrouching := !bAutofireCrouching
+		SetTimer, CrouchAutofire, % bAutofireCrouching ? autofireKeyDelay : "Off"
+		KeyWait, %crouchAutofireKey%
 		return
-	default:
 }
 
 ;OutputDebug, crouchLabel::%A_ThisHotkey% end
@@ -100,9 +106,10 @@ switch bSprintMode
 		SprintHold()
 		return
 	case AIM_MODE_AUTOFIRE:
-		SprintAutofire()
+		bAutofireSprinting := !bAutofireSprinting
+		SetTimer, SprintAutofire, % bAutofireSprinting ? autofireKeyDelay : "Off"
+		KeyWait, %sprintAutofireKey%
 		return
-	default:
 }
 
 ;OutputDebug, sprintLabel::%A_ThisHotkey% end
@@ -114,6 +121,11 @@ AimAutofire()
 	global
 
 	;OutputDebug, AimAutofire::begin
+
+	SendInput % "{" . aimKey . " down}"
+	Sleep, %keyDelay%
+	SendInput % "{" . aimKey . " up}"
+
 	;OutputDebug, AimAutofire::end
 }
 
@@ -125,14 +137,14 @@ AimHold()
 	;OutputDebug, AimHold::press
 
 	SendInput % "{" . aimKey . " down}"
-	Sleep, %holdKeyDelay%
+	Sleep, %keyDelay%
 	SendInput % "{" . aimKey . " up}"
 
 	KeyWait, %aimKey%
 
 	;OutputDebug, AimHold::release
 	SendInput % "{" . aimKey . " down}"
-	Sleep, %holdKeyDelay%
+	Sleep, %keyDelay%
 	SendInput % "{" . aimKey . " up}"
 
 	;OutputDebug, AimHold::end
@@ -159,6 +171,11 @@ CrouchAutofire()
 	global
 
 	;OutputDebug, CrouchAutofire::begin
+
+	SendInput % "{" . crouchKey . " down}"
+	Sleep, %keyDelay%
+	SendInput % "{" . crouchKey . " up}"
+
 	;OutputDebug, CrouchAutofire::end
 }
 
@@ -170,14 +187,14 @@ CrouchHold()
 	;OutputDebug, CrouchHold::press
 
 	SendInput % "{" . crouchKey . " down}"
-	Sleep, %holdKeyDelay%
+	Sleep, %keyDelay%
 	SendInput % "{" . crouchKey . " up}"
 
 	KeyWait, %crouchKey%
 
 	;OutputDebug, CrouchHold::release
 	SendInput % "{" . crouchKey . " down}"
-	Sleep, %holdKeyDelay%
+	Sleep, %keyDelay%
 	SendInput % "{" . crouchKey . " up}"
 
 	;OutputDebug, CrouchHold::end
@@ -201,9 +218,19 @@ CrouchToggle(pCrouching, pWait := true)
 
 ReleaseAllKeys()
 {
+	global
+
 	AimToggle(false)
 	CrouchToggle(false)
 	SprintToggle(false)
+
+	bAutofireAiming := false
+	bAutofireCrouching := false
+	bAutofireSprinting := false
+
+	SetTimer, AimAutofire, Off
+	SetTimer, CrouchAutofire, Off
+	SetTimer, SprintAutofire, Off
 }
 
 HookWindow()
@@ -284,28 +311,31 @@ ReadConfigFile()
 	IniRead, bAimMode, %configFileName%, General, bAimMode, 1
 	IniRead, bCrouchMode, %configFileName%, General, bCrouchMode, 1
 	IniRead, bSprintMode, %configFileName%, General, bSprintMode, 1
-	IniRead, holdKeyDelay, %configFileName%, General, holdKeyDelay, 0
-	IniRead, hookDelay, %configFileName%, General, hookDelay, 0
+	IniRead, autofireKeyDelay, %configFileName%, General, autofireKeyDelay, 100
 	IniRead, focusCheckDelay, %configFileName%, General, focusCheckDelay, 1000
+	IniRead, hookDelay, %configFileName%, General, hookDelay, 0
+	IniRead, keyDelay, %configFileName%, General, keyDelay, 0
 	IniRead, restoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 0
 
 	; Keys
 	IniRead, aimKey, %configFileName%, Keys, aimKey, RButton
 	IniRead, crouchKey, %configFileName%, Keys, crouchKey, LCtrl
 	IniRead, sprintKey, %configFileName%, Keys, sprintKey, LShift
-
-	; Debug
-	IniRead, bDebug, %configFileName%, Debug, bDebug, 0
+	IniRead, aimAutofireKey, %configFileName%, Keys, aimAutofireKey, F1
+	IniRead, crouchAutofireKey, %configFileName%, Keys, crouchAutofireKey, F2
+	IniRead, sprintAutofireKey, %configFileName%, Keys, sprintAutofireKey, F3
 }
 
 RegisterHotkeys()
 {
-	; All the variables below are declared as global so they can be used in the whole script
 	global
 
-	Hotkey, %aimKey%, aimLabel, % bAimMode > 0 ? "On" : "Off"
-	Hotkey, %crouchKey%, crouchLabel, % bCrouchMode > 0 ? "On" : "Off"
-	Hotkey, %sprintKey%, sprintLabel, % bSprintMode > 0 ? "On" : "Off"
+	Hotkey, %aimKey%, aimLabel, % bAimMode > 0 && bAimMode != AIM_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %crouchKey%, crouchLabel, % bCrouchMode > 0 && bCrouchMode != AIM_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %sprintKey%, sprintLabel, % bSprintMode > 0 && bSprintMode != AIM_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %aimAutofireKey%, aimLabel, % bAimMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %crouchAutofireKey%, crouchLabel, % bCrouchMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %sprintAutofireKey%, sprintLabel, % bSprintMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
 }
 
 SprintAutofire()
@@ -313,6 +343,11 @@ SprintAutofire()
 	global
 
 	;OutputDebug, SprintAutofire::begin
+
+	SendInput % "{" . sprintKey . " down}"
+	Sleep, %keyDelay%
+	SendInput % "{" . sprintKey . " up}"
+
 	;OutputDebug, SprintAutofire::end
 }
 
@@ -324,14 +359,14 @@ SprintHold()
 	;OutputDebug, SprintHold::press
 
 	SendInput % "{" . sprintKey . " down}"
-	Sleep, %holdKeyDelay%
+	Sleep, %keyDelay%
 	SendInput % "{" . sprintKey . " up}"
 
 	KeyWait, %sprintKey%
 
 	;OutputDebug, SprintHold::release
 	SendInput % "{" . sprintKey . " down}"
-	Sleep, %holdKeyDelay%
+	Sleep, %keyDelay%
 	SendInput % "{" . sprintKey . " up}"
 
 	;OutputDebug, SprintHold::end
