@@ -1,8 +1,8 @@
 ; KeyToggles v1.32
 
 ;TODO
-; add autofire support
-; add key hold support
+; add autofire support (https://autohotkey.com/board/topic/64576-the-definitive-autofire-thread/)
+; add application profile support
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -16,6 +16,11 @@ SetWorkingDir %A_ScriptDir%      ; Ensures a consistent starting directory.
 
 ; Register a function to be called on exit
 OnExit("ExitFunc")
+
+; Constants
+AIM_MODE_TOGGLE := 1
+AIM_MODE_HOLD := 2
+AIM_MODE_AUTOFIRE := 3
 
 ; Initialize state variables
 bAiming := false
@@ -41,7 +46,21 @@ return
 aimLabel:
 
 ;OutputDebug, aimLabel::%A_ThisHotkey% begin
-Aim(!bAiming, true)
+
+switch bAimMode
+{
+	case AIM_MODE_TOGGLE:
+		AimToggle(!bAiming, true)
+		return
+	case AIM_MODE_HOLD:
+		AimHold()
+		return
+	case AIM_MODE_AUTOFIRE:
+		AimAutofire()
+		return
+	default:
+}
+
 ;OutputDebug, aimLabel::%A_ThisHotkey% end
 
 return
@@ -49,7 +68,21 @@ return
 crouchLabel:
 
 ;OutputDebug, crouchLabel::%A_ThisHotkey% begin
-Crouch(!bCrouching, true)
+
+switch bCrouchMode
+{
+	case AIM_MODE_TOGGLE:
+		CrouchToggle(!bCrouching, true)
+		return
+	case AIM_MODE_HOLD:
+		CrouchHold()
+		return
+	case AIM_MODE_AUTOFIRE:
+		CrouchAutofire()
+		return
+	default:
+}
+
 ;OutputDebug, crouchLabel::%A_ThisHotkey% end
 
 return
@@ -57,35 +90,107 @@ return
 sprintLabel:
 
 ;OutputDebug, sprintLabel::%A_ThisHotkey% begin
-Sprint(!bSprinting, true)
+
+switch bSprintMode
+{
+	case AIM_MODE_TOGGLE:
+		SprintToggle(!bSprinting, true)
+		return
+	case AIM_MODE_HOLD:
+		SprintHold()
+		return
+	case AIM_MODE_AUTOFIRE:
+		SprintAutofire()
+		return
+	default:
+}
+
 ;OutputDebug, sprintLabel::%A_ThisHotkey% end
 
 return
 
-; Toggle aim 
-Aim(pAiming, pWait := false)
+AimAutofire()
 {
 	global
 
-	;OutputDebug, Aim::begin
+	;OutputDebug, AimAutofire::begin
+	;OutputDebug, AimAutofire::end
+}
+
+AimHold()
+{
+	global
+
+	;OutputDebug, AimHold::begin
+	;OutputDebug, AimHold::press
+
+	SendInput % "{" . aimKey . " down}"
+	Sleep, %holdKeyDelay%
+	SendInput % "{" . aimKey . " up}"
+
+	KeyWait, %aimKey%
+
+	;OutputDebug, AimHold::release
+	SendInput % "{" . aimKey . " down}"
+	Sleep, %holdKeyDelay%
+	SendInput % "{" . aimKey . " up}"
+
+	;OutputDebug, AimHold::end
+}
+
+AimToggle(pAiming, pWait := false)
+{
+	global
+
+	;OutputDebug, AimToggle::begin
 	bAiming := pAiming
-	;OutputDebug, Aim::bAiming %bAiming%
+	;OutputDebug, AimToggle::bAiming %bAiming%
+
 	SendInput % bAiming ? "{" . aimKey . " down}" : "{" . aimKey . " up}"
 
 	if (pWait)
 		KeyWait, %aimKey%
 
-	;OutputDebug, Aim::end
+	;OutputDebug, AimToggle::end
 }
 
-; Toggle crouch 
-Crouch(pCrouching, pWait := true)
+CrouchAutofire()
+{
+	global
+
+	;OutputDebug, CrouchAutofire::begin
+	;OutputDebug, CrouchAutofire::end
+}
+
+CrouchHold()
+{
+	global
+
+	;OutputDebug, CrouchHold::begin
+	;OutputDebug, CrouchHold::press
+
+	SendInput % "{" . crouchKey . " down}"
+	Sleep, %holdKeyDelay%
+	SendInput % "{" . crouchKey . " up}"
+
+	KeyWait, %crouchKey%
+
+	;OutputDebug, CrouchHold::release
+	SendInput % "{" . crouchKey . " down}"
+	Sleep, %holdKeyDelay%
+	SendInput % "{" . crouchKey . " up}"
+
+	;OutputDebug, CrouchHold::end
+}
+
+CrouchToggle(pCrouching, pWait := true)
 {
 	global
 
 	;OutputDebug, Crouch::begin
 	bCrouching := pCrouching
 	;OutputDebug, Crouch::bCrouching %bCrouching%
+
 	SendInput % bCrouching ? "{" . crouchKey . " down}" : "{" . crouchKey . " up}"
 
 	if (pWait)
@@ -94,12 +199,11 @@ Crouch(pCrouching, pWait := true)
 	;OutputDebug, Crouch::end
 }
 
-; Disable all toggles
-DisableAllToggles()
+ReleaseAllKeys()
 {
-	Aim(false)
-	Crouch(false)
-	Sprint(false)
+	AimToggle(false)
+	CrouchToggle(false)
+	SprintToggle(false)
 }
 
 HookWindow()
@@ -140,32 +244,32 @@ OnFocusChanged()
 	}
 
 	; Restore toggle states
-	if (restoreTogglesOnFocus)
+	if (restoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE)
 	{
 		OutputDebug, OnFocusChanged::restoreToggleStates
 
 		if (bRestoreAiming)
-			Aim(true)
+			AimToggle(true)
 		if (bRestoreCrouching)
-			Crouch(true)
+			CrouchToggle(true)
 		if (bRestoreSprinting)
-			Sprint(true)
+			SprintToggle(true)
 	}
 
 	OutputDebug, OnFocusChanged::WinWaitNotActive
 	WinWaitNotActive, %windowName%
 
 	; Save toggle states
-	if (restoreTogglesOnFocus && WinExist(windowName))
+	if (restoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE && WinExist(windowName))
 	{
 		OutputDebug, OnFocusChanged::saveToggleStates
 
-		bRestoreAiming := bAimToggle ? bAiming : false
-		bRestoreCrouching := bCrouchToggle ? bCrouching : false
-		bRestoreSprinting := bSprintToggle ? bSprinting : false
+		bRestoreAiming := bAiming
+		bRestoreCrouching := bCrouching
+		bRestoreSprinting := bSprinting
 	}
 
-	DisableAllToggles()
+	ReleaseAllKeys()
 
 	OutputDebug, OnFocusChanged::end
 }
@@ -177,12 +281,13 @@ ReadConfigFile()
 
 	; General
 	IniRead, windowName, %configFileName%, General, windowName
-	IniRead, bAimToggle, %configFileName%, General, bAimToggle, 1
-	IniRead, bCrouchToggle, %configFileName%, General, bCrouchToggle, 1
-	IniRead, bSprintToggle, %configFileName%, General, bSprintToggle, 1
+	IniRead, bAimMode, %configFileName%, General, bAimMode, 1
+	IniRead, bCrouchMode, %configFileName%, General, bCrouchMode, 1
+	IniRead, bSprintMode, %configFileName%, General, bSprintMode, 1
+	IniRead, holdKeyDelay, %configFileName%, General, holdKeyDelay, 0
 	IniRead, hookDelay, %configFileName%, General, hookDelay, 0
 	IniRead, focusCheckDelay, %configFileName%, General, focusCheckDelay, 1000
-	IniRead, restoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 1
+	IniRead, restoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 0
 
 	; Keys
 	IniRead, aimKey, %configFileName%, Keys, aimKey, RButton
@@ -198,19 +303,48 @@ RegisterHotkeys()
 	; All the variables below are declared as global so they can be used in the whole script
 	global
 
-	Hotkey, %aimKey%, aimLabel, % bAimToggle ? "On" : "Off"
-	Hotkey, %crouchKey%, crouchLabel, % bCrouchToggle ? "On" : "Off"
-	Hotkey, %sprintKey%, sprintLabel, % bSprintToggle ? "On" : "Off"
+	Hotkey, %aimKey%, aimLabel, % bAimMode > 0 ? "On" : "Off"
+	Hotkey, %crouchKey%, crouchLabel, % bCrouchMode > 0 ? "On" : "Off"
+	Hotkey, %sprintKey%, sprintLabel, % bSprintMode > 0 ? "On" : "Off"
 }
 
-; Toggle sprint
-Sprint(pSprinting, pWait := true)
+SprintAutofire()
+{
+	global
+
+	;OutputDebug, SprintAutofire::begin
+	;OutputDebug, SprintAutofire::end
+}
+
+SprintHold()
+{
+	global
+
+	;OutputDebug, SprintHold::begin
+	;OutputDebug, SprintHold::press
+
+	SendInput % "{" . sprintKey . " down}"
+	Sleep, %holdKeyDelay%
+	SendInput % "{" . sprintKey . " up}"
+
+	KeyWait, %sprintKey%
+
+	;OutputDebug, SprintHold::release
+	SendInput % "{" . sprintKey . " down}"
+	Sleep, %holdKeyDelay%
+	SendInput % "{" . sprintKey . " up}"
+
+	;OutputDebug, SprintHold::end
+}
+
+SprintToggle(pSprinting, pWait := true)
 {
 	global
 
 	;OutputDebug, Sprint::begin
 	bSprinting := pSprinting
 	;OutputDebug, Sprint::bSprinting %bSprinting%
+
 	SendInput % bSprinting ? "{" . sprintKey . " down}" : "{" . sprintKey . " up}"
 
 	if (pWait)
@@ -222,7 +356,7 @@ Sprint(pSprinting, pWait := true)
 ; Exit script
 ExitFunc(ExitReason, ExitCode)
 {
-	DisableAllToggles()
+	ReleaseAllKeys()
 	ExitApp
 }
 
@@ -247,5 +381,5 @@ else
 	SoundBeep, 1000
 }
 
-DisableAllToggles()
+ReleaseAllKeys()
 return
