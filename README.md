@@ -1,5 +1,5 @@
 # KeyToggles
-An AutoHotkey 1.1 script that can change the behavior of keys and mouse buttons.  
+An AutoHotkey 1.1 script that can change the input mode of keys and mouse buttons.
 
 3 modes are currently supported:
 - toggle: you don't have to hold the key to perform its action.
@@ -18,12 +18,12 @@ Make sure that your keys or mouse buttons in "KeyToggles.ini" are the same than 
 
 Default keys:
 
+Right-click: toggle aim  
 Left CTRL: toggle crouch  
 Left SHIFT: toggle sprint  
-Right-click: toggle aim  
-F1: toggle crouch autofire  
-F2: toggle sprint autofire  
-F3: toggle aim autofire  
+F1: toggle aim autofire  
+F2: toggle crouch autofire  
+F3: toggle sprint autofire  
 Left ALT + F12: pause the script (disable all hotkeys)  
 
 For games run as admin, you must also run the script as admin for it to work.
