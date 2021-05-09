@@ -3,7 +3,6 @@
 ;TODO
 ; add application profiles
 ; add overlay/notifications
-; add release script
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -331,9 +330,12 @@ RegisterHotkeys()
 {
 	global
 
-	Hotkey, %aimKey%, aimLabel, % bAimMode > 0 && bAimMode != AIM_MODE_AUTOFIRE ? "On" : "Off"
-	Hotkey, %crouchKey%, crouchLabel, % bCrouchMode > 0 && bCrouchMode != AIM_MODE_AUTOFIRE ? "On" : "Off"
-	Hotkey, %sprintKey%, sprintLabel, % bSprintMode > 0 && bSprintMode != AIM_MODE_AUTOFIRE ? "On" : "Off"
+	; Enabled only for toggle and hold modes
+	Hotkey, %aimKey%, aimLabel, % bAimMode > 0 && bAimMode < AIM_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %crouchKey%, crouchLabel, % bCrouchMode > 0 && bCrouchMode < AIM_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %sprintKey%, sprintLabel, % bSprintMode > 0 && bSprintMode < AIM_MODE_AUTOFIRE ? "On" : "Off"
+
+	; Enabled only for autofire mode
 	Hotkey, %aimAutofireKey%, aimLabel, % bAimMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
 	Hotkey, %crouchAutofireKey%, crouchLabel, % bCrouchMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
 	Hotkey, %sprintAutofireKey%, sprintLabel, % bSprintMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
