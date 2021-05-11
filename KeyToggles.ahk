@@ -1,7 +1,7 @@
 ; KeyToggles v1.4
 
 ;TODO
-; add application profiles
+; add application profiles (https://stackoverflow.com/questions/45190170/how-can-i-make-this-ini-file-into-a-listview-in-autohotkey)
 ; add overlay/notifications
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
@@ -307,7 +307,11 @@ ReadConfigFile()
 	global
 
 	; General
-	IniRead, windowName, %configFileName%, General, windowName
+	IniRead, windowName, %configFileName%, General, windowName, "put_window_name_here"
+
+	if (windowName == "put_window_name_here")
+		ExitWithErrorMessage("You must specify a window name! The script will now exit.")
+
 	IniRead, bAimMode, %configFileName%, General, bAimMode, 1
 	IniRead, bCrouchMode, %configFileName%, General, bCrouchMode, 1
 	IniRead, bSprintMode, %configFileName%, General, bSprintMode, 1
@@ -395,14 +399,13 @@ SprintToggle(pSprinting, pWait := true)
 ExitFunc(ExitReason, ExitCode)
 {
 	ReleaseAllKeys()
-	ExitApp
 }
 
 ; Display an error message and exit
 ExitWithErrorMessage(ErrorMessage)
 {
 	MsgBox, 16, Error, %ErrorMessage%
-	ExitApp, -1
+	ExitApp, 1
 }
 
 ; Suspend script (useful when in menus)
