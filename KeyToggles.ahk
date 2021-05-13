@@ -246,6 +246,9 @@ HookWindow()
 	GroupAdd, windowIDGroup, ahk_id %windowID%
 	Hotkey, IfWinActive, ahk_group windowIDGroup
 	OutputDebug, %A_ThisFunc%::end
+	
+	if (windowID && bShowNotifications)
+		TrayTip, %configFileNameTrimmed%, % "The window """ . sWindowName . """ has been hooked."
 }
 
 ; Disable toggles on focus lost and optionally restore them on focus
