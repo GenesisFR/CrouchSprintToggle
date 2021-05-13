@@ -2,7 +2,7 @@
 
 ;TODO
 ; add application profiles (https://stackoverflow.com/questions/45190170/how-can-i-make-this-ini-file-into-a-listview-in-autohotkey)
-; add overlay/notifications
+; add overlay
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -43,7 +43,7 @@ if (!FileExist(configFileName))
 	ExitWithErrorMessage(configFileName . " not found! The script will now exit.")
 
 ReadConfigFile()
-SetTimer, OnFocusChanged, %focusCheckDelay%
+SetTimer, OnFocusChanged, %nFocusCheckDelay%
 
 return
 
@@ -62,7 +62,7 @@ switch bAimMode
 	case AIM_MODE_AUTOFIRE:
 		; Based on https://autohotkey.com/board/topic/64576-the-definitive-autofire-thread/?p=407264
 		bAutofireAiming := !bAutofireAiming
-		SetTimer, AimAutofire, % bAutofireAiming ? autofireKeyDelay : "Off"
+		SetTimer, AimAutofire, % bAutofireAiming ? nAutofireKeyDelay : "Off"
 		KeyWait, %aimAutofireKey%
 		return
 }
@@ -85,7 +85,7 @@ switch bCrouchMode
 		return
 	case AIM_MODE_AUTOFIRE:
 		bAutofireCrouching := !bAutofireCrouching
-		SetTimer, CrouchAutofire, % bAutofireCrouching ? autofireKeyDelay : "Off"
+		SetTimer, CrouchAutofire, % bAutofireCrouching ? nAutofireKeyDelay : "Off"
 		KeyWait, %crouchAutofireKey%
 		return
 }
@@ -108,7 +108,7 @@ switch bSprintMode
 		return
 	case AIM_MODE_AUTOFIRE:
 		bAutofireSprinting := !bAutofireSprinting
-		SetTimer, SprintAutofire, % bAutofireSprinting ? autofireKeyDelay : "Off"
+		SetTimer, SprintAutofire, % bAutofireSprinting ? nAutofireKeyDelay : "Off"
 		KeyWait, %sprintAutofireKey%
 		return
 }
@@ -124,7 +124,7 @@ AimAutofire()
 	;OutputDebug, %A_ThisFunc%::begin
 
 	SendInput % "{" . aimKey . " down}"
-	Sleep, %keyDelay%
+	Sleep, %nKeyDelay%
 	SendInput % "{" . aimKey . " up}"
 
 	;OutputDebug, %A_ThisFunc%::end
@@ -138,14 +138,14 @@ AimHold()
 	;OutputDebug, %A_ThisFunc%::press
 
 	SendInput % "{" . aimKey . " down}"
-	Sleep, %keyDelay%
+	Sleep, %nKeyDelay%
 	SendInput % "{" . aimKey . " up}"
 
 	KeyWait, %aimKey%
 
 	;OutputDebug, %A_ThisFunc%::release
 	SendInput % "{" . aimKey . " down}"
-	Sleep, %keyDelay%
+	Sleep, %nKeyDelay%
 	SendInput % "{" . aimKey . " up}"
 
 	;OutputDebug, %A_ThisFunc%::end
@@ -174,7 +174,7 @@ CrouchAutofire()
 	;OutputDebug, %A_ThisFunc%::begin
 
 	SendInput % "{" . crouchKey . " down}"
-	Sleep, %keyDelay%
+	Sleep, %nKeyDelay%
 	SendInput % "{" . crouchKey . " up}"
 
 	;OutputDebug, %A_ThisFunc%::end
@@ -188,14 +188,14 @@ CrouchHold()
 	;OutputDebug, %A_ThisFunc%::press
 
 	SendInput % "{" . crouchKey . " down}"
-	Sleep, %keyDelay%
+	Sleep, %nKeyDelay%
 	SendInput % "{" . crouchKey . " up}"
 
 	KeyWait, %crouchKey%
 
 	;OutputDebug, %A_ThisFunc%::release
 	SendInput % "{" . crouchKey . " down}"
-	Sleep, %keyDelay%
+	Sleep, %nKeyDelay%
 	SendInput % "{" . crouchKey . " up}"
 
 	;OutputDebug, %A_ThisFunc%::end
@@ -241,7 +241,7 @@ HookWindow()
 
 	; Make the hotkeys active only for a specific window
 	OutputDebug, %A_ThisFunc%::begin
-	WinGet, windowID, ID, %windowName%
+	WinGet, windowID, ID, %sWindowName%
 	OutputDebug, %A_ThisFunc%::WinGet %windowID%
 	GroupAdd, windowIDGroup, ahk_id %windowID%
 	Hotkey, IfWinActive, ahk_group windowIDGroup
@@ -256,11 +256,11 @@ OnFocusChanged()
 	OutputDebug, %A_ThisFunc%::begin
 
 	OutputDebug, %A_ThisFunc%::WinWaitActive
-	WinWaitActive, %windowName%
-	Sleep, %hookDelay%
+	WinWaitActive, %sWindowName%
+	Sleep, %nHookDelay%
 
 	; Make sure to hook the window again if it no longer exists
-	if (windowID != WinExist(windowName))
+	if (windowID != WinExist(sWindowName))
 	{
 		HookWindow()
 		RegisterHotkeys()
@@ -285,10 +285,10 @@ OnFocusChanged()
 	}
 
 	OutputDebug, %A_ThisFunc%::WinWaitNotActive
-	WinWaitNotActive, %windowName%
+	WinWaitNotActive, %sWindowName%
 
 	; Save toggle states
-	if (bRestoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE && WinExist(windowName))
+	if (bRestoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE && WinExist(sWindowName))
 	{
 		OutputDebug, %A_ThisFunc%::saveToggleStates
 
@@ -308,16 +308,16 @@ ReadConfigFile()
 	global
 
 	; General
-	IniRead, windowName, %configFileName%, General, windowName, "put_window_name_here"
-
-	IniRead, bRestoreTogglesOnFocus, %configFileName%, General, bRestoreTogglesOnFocus, 0
-	IniRead, bAimMode, %configFileName%, General, bAimMode, 1
-	IniRead, bCrouchMode, %configFileName%, General, bCrouchMode, 1
-	IniRead, bSprintMode, %configFileName%, General, bSprintMode, 1
-	IniRead, autofireKeyDelay, %configFileName%, General, autofireKeyDelay, 100
-	IniRead, focusCheckDelay, %configFileName%, General, focusCheckDelay, 1000
-	IniRead, hookDelay, %configFileName%, General, hookDelay, 0
-	IniRead, keyDelay, %configFileName%, General, keyDelay, 0
+	IniRead, sWindowName, %configFileName%, General, windowName, "put_window_name_here"
+	IniRead, bAimMode, %configFileName%, General, aimMode, 1
+	IniRead, bCrouchMode, %configFileName%, General, crouchMode, 1
+	IniRead, bSprintMode, %configFileName%, General, sprintMode, 1
+	IniRead, nAutofireKeyDelay, %configFileName%, General, autofireKeyDelay, 100
+	IniRead, nFocusCheckDelay, %configFileName%, General, focusCheckDelay, 1000
+	IniRead, nHookDelay, %configFileName%, General, hookDelay, 0
+	IniRead, nKeyDelay, %configFileName%, General, keyDelay, 0
+	IniRead, bRestoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 0
+	IniRead, bShowNotifications, %configFileName%, General, showNotifications, 0
 
 	; Keys
 	IniRead, aimKey, %configFileName%, Keys, aimKey, RButton
@@ -327,7 +327,7 @@ ReadConfigFile()
 	IniRead, crouchAutofireKey, %configFileName%, Keys, crouchAutofireKey, F2
 	IniRead, sprintAutofireKey, %configFileName%, Keys, sprintAutofireKey, F3
 
-	if (windowName == "put_window_name_here")
+	if (sWindowName == "put_window_name_here")
 		ExitWithErrorMessage("You must specify a window name! The script will now exit.")
 }
 
@@ -353,7 +353,7 @@ SprintAutofire()
 	;OutputDebug, %A_ThisFunc%::begin
 
 	SendInput % "{" . sprintKey . " down}"
-	Sleep, %keyDelay%
+	Sleep, %nKeyDelay%
 	SendInput % "{" . sprintKey . " up}"
 
 	;OutputDebug, %A_ThisFunc%::end
@@ -367,14 +367,14 @@ SprintHold()
 	;OutputDebug, %A_ThisFunc%::press
 
 	SendInput % "{" . sprintKey . " down}"
-	Sleep, %keyDelay%
+	Sleep, %nKeyDelay%
 	SendInput % "{" . sprintKey . " up}"
 
 	KeyWait, %sprintKey%
 
 	;OutputDebug, %A_ThisFunc%::release
 	SendInput % "{" . sprintKey . " down}"
-	Sleep, %keyDelay%
+	Sleep, %nKeyDelay%
 	SendInput % "{" . sprintKey . " up}"
 
 	;OutputDebug, %A_ThisFunc%::end
