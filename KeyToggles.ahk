@@ -271,7 +271,7 @@ OnFocusChanged()
 	}
 
 	; Restore toggle states
-	if (restoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE)
+	if (bRestoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE)
 	{
 		OutputDebug, OnFocusChanged::restoreToggleStates
 
@@ -287,7 +287,7 @@ OnFocusChanged()
 	WinWaitNotActive, %windowName%
 
 	; Save toggle states
-	if (restoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE && WinExist(windowName))
+	if (bRestoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE && WinExist(windowName))
 	{
 		OutputDebug, OnFocusChanged::saveToggleStates
 
@@ -309,9 +309,7 @@ ReadConfigFile()
 	; General
 	IniRead, windowName, %configFileName%, General, windowName, "put_window_name_here"
 
-	if (windowName == "put_window_name_here")
-		ExitWithErrorMessage("You must specify a window name! The script will now exit.")
-
+	IniRead, bRestoreTogglesOnFocus, %configFileName%, General, bRestoreTogglesOnFocus, 0
 	IniRead, bAimMode, %configFileName%, General, bAimMode, 1
 	IniRead, bCrouchMode, %configFileName%, General, bCrouchMode, 1
 	IniRead, bSprintMode, %configFileName%, General, bSprintMode, 1
@@ -319,7 +317,6 @@ ReadConfigFile()
 	IniRead, focusCheckDelay, %configFileName%, General, focusCheckDelay, 1000
 	IniRead, hookDelay, %configFileName%, General, hookDelay, 0
 	IniRead, keyDelay, %configFileName%, General, keyDelay, 0
-	IniRead, restoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 0
 
 	; Keys
 	IniRead, aimKey, %configFileName%, Keys, aimKey, RButton
@@ -328,6 +325,9 @@ ReadConfigFile()
 	IniRead, aimAutofireKey, %configFileName%, Keys, aimAutofireKey, F1
 	IniRead, crouchAutofireKey, %configFileName%, Keys, crouchAutofireKey, F2
 	IniRead, sprintAutofireKey, %configFileName%, Keys, sprintAutofireKey, F3
+
+	if (windowName == "put_window_name_here")
+		ExitWithErrorMessage("You must specify a window name! The script will now exit.")
 }
 
 RegisterHotkeys()
