@@ -34,7 +34,8 @@ bRestoreCrouching := false
 bRestoreSprinting := false
 windowID := 0
 
-configFileName := RTrim(A_ScriptName, A_IsCompiled ? ".exe" : ".ahk") . ".ini"
+configFileNameTrimmed := RTrim(A_ScriptName, A_IsCompiled ? ".exe" : ".ahk")
+configFileName := configFileNameTrimmed . ".ini"
 OutputDebug, init::configFileName %configFileName%
 
 ; Config file is missing, exit
@@ -48,7 +49,7 @@ return
 
 aimLabel:
 
-;OutputDebug, aimLabel::%A_ThisHotkey% begin
+;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% begin
 
 switch bAimMode
 {
@@ -66,13 +67,13 @@ switch bAimMode
 		return
 }
 
-;OutputDebug, aimLabel::%A_ThisHotkey% end
+;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% end
 
 return
 
 crouchLabel:
 
-;OutputDebug, crouchLabel::%A_ThisHotkey% begin
+;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% begin
 
 switch bCrouchMode
 {
@@ -89,13 +90,13 @@ switch bCrouchMode
 		return
 }
 
-;OutputDebug, crouchLabel::%A_ThisHotkey% end
+;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% end
 
 return
 
 sprintLabel:
 
-;OutputDebug, sprintLabel::%A_ThisHotkey% begin
+;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% begin
 
 switch bSprintMode
 {
@@ -112,7 +113,7 @@ switch bSprintMode
 		return
 }
 
-;OutputDebug, sprintLabel::%A_ThisHotkey% end
+;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% end
 
 return
 
@@ -120,21 +121,21 @@ AimAutofire()
 {
 	global
 
-	;OutputDebug, AimAutofire::begin
+	;OutputDebug, %A_ThisFunc%::begin
 
 	SendInput % "{" . aimKey . " down}"
 	Sleep, %keyDelay%
 	SendInput % "{" . aimKey . " up}"
 
-	;OutputDebug, AimAutofire::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 AimHold()
 {
 	global
 
-	;OutputDebug, AimHold::begin
-	;OutputDebug, AimHold::press
+	;OutputDebug, %A_ThisFunc%::begin
+	;OutputDebug, %A_ThisFunc%::press
 
 	SendInput % "{" . aimKey . " down}"
 	Sleep, %keyDelay%
@@ -142,49 +143,49 @@ AimHold()
 
 	KeyWait, %aimKey%
 
-	;OutputDebug, AimHold::release
+	;OutputDebug, %A_ThisFunc%::release
 	SendInput % "{" . aimKey . " down}"
 	Sleep, %keyDelay%
 	SendInput % "{" . aimKey . " up}"
 
-	;OutputDebug, AimHold::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 AimToggle(pAiming, pWait := false)
 {
 	global
 
-	;OutputDebug, AimToggle::begin
+	;OutputDebug, %A_ThisFunc%::begin
 	bAiming := pAiming
-	;OutputDebug, AimToggle::bAiming %bAiming%
+	;OutputDebug, %A_ThisFunc%::bAiming %bAiming%
 
 	SendInput % bAiming ? "{" . aimKey . " down}" : "{" . aimKey . " up}"
 
 	if (pWait)
 		KeyWait, %aimKey%
 
-	;OutputDebug, AimToggle::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 CrouchAutofire()
 {
 	global
 
-	;OutputDebug, CrouchAutofire::begin
+	;OutputDebug, %A_ThisFunc%::begin
 
 	SendInput % "{" . crouchKey . " down}"
 	Sleep, %keyDelay%
 	SendInput % "{" . crouchKey . " up}"
 
-	;OutputDebug, CrouchAutofire::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 CrouchHold()
 {
 	global
 
-	;OutputDebug, CrouchHold::begin
-	;OutputDebug, CrouchHold::press
+	;OutputDebug, %A_ThisFunc%::begin
+	;OutputDebug, %A_ThisFunc%::press
 
 	SendInput % "{" . crouchKey . " down}"
 	Sleep, %keyDelay%
@@ -192,28 +193,28 @@ CrouchHold()
 
 	KeyWait, %crouchKey%
 
-	;OutputDebug, CrouchHold::release
+	;OutputDebug, %A_ThisFunc%::release
 	SendInput % "{" . crouchKey . " down}"
 	Sleep, %keyDelay%
 	SendInput % "{" . crouchKey . " up}"
 
-	;OutputDebug, CrouchHold::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 CrouchToggle(pCrouching, pWait := true)
 {
 	global
 
-	;OutputDebug, Crouch::begin
+	;OutputDebug, %A_ThisFunc%::begin
 	bCrouching := pCrouching
-	;OutputDebug, Crouch::bCrouching %bCrouching%
+	;OutputDebug, %A_ThisFunc%::bCrouching %bCrouching%
 
 	SendInput % bCrouching ? "{" . crouchKey . " down}" : "{" . crouchKey . " up}"
 
 	if (pWait)
 		KeyWait, %crouchKey%
 
-	;OutputDebug, Crouch::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 ReleaseAllKeys()
@@ -239,12 +240,12 @@ HookWindow()
 	global
 
 	; Make the hotkeys active only for a specific window
-	OutputDebug, HookWindow::begin
+	OutputDebug, %A_ThisFunc%::begin
 	WinGet, windowID, ID, %windowName%
-	OutputDebug, HookWindow::WinGet %windowID%
+	OutputDebug, %A_ThisFunc%::WinGet %windowID%
 	GroupAdd, windowIDGroup, ahk_id %windowID%
 	Hotkey, IfWinActive, ahk_group windowIDGroup
-	OutputDebug, HookWindow::end
+	OutputDebug, %A_ThisFunc%::end
 }
 
 ; Disable toggles on focus lost and optionally restore them on focus
@@ -252,9 +253,9 @@ OnFocusChanged()
 {
 	global
 
-	OutputDebug, OnFocusChanged::begin
+	OutputDebug, %A_ThisFunc%::begin
 
-	OutputDebug, OnFocusChanged::WinWaitActive
+	OutputDebug, %A_ThisFunc%::WinWaitActive
 	WinWaitActive, %windowName%
 	Sleep, %hookDelay%
 
@@ -273,7 +274,7 @@ OnFocusChanged()
 	; Restore toggle states
 	if (bRestoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE)
 	{
-		OutputDebug, OnFocusChanged::restoreToggleStates
+		OutputDebug, %A_ThisFunc%::restoreToggleStates
 
 		if (bRestoreAiming)
 			AimToggle(true)
@@ -283,13 +284,13 @@ OnFocusChanged()
 			SprintToggle(true)
 	}
 
-	OutputDebug, OnFocusChanged::WinWaitNotActive
+	OutputDebug, %A_ThisFunc%::WinWaitNotActive
 	WinWaitNotActive, %windowName%
 
 	; Save toggle states
 	if (bRestoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE && WinExist(windowName))
 	{
-		OutputDebug, OnFocusChanged::saveToggleStates
+		OutputDebug, %A_ThisFunc%::saveToggleStates
 
 		bRestoreAiming := bAiming
 		bRestoreCrouching := bCrouching
@@ -298,7 +299,7 @@ OnFocusChanged()
 
 	ReleaseAllKeys()
 
-	OutputDebug, OnFocusChanged::end
+	OutputDebug, %A_ThisFunc%::end
 }
 
 ReadConfigFile()
@@ -349,21 +350,21 @@ SprintAutofire()
 {
 	global
 
-	;OutputDebug, SprintAutofire::begin
+	;OutputDebug, %A_ThisFunc%::begin
 
 	SendInput % "{" . sprintKey . " down}"
 	Sleep, %keyDelay%
 	SendInput % "{" . sprintKey . " up}"
 
-	;OutputDebug, SprintAutofire::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 SprintHold()
 {
 	global
 
-	;OutputDebug, SprintHold::begin
-	;OutputDebug, SprintHold::press
+	;OutputDebug, %A_ThisFunc%::begin
+	;OutputDebug, %A_ThisFunc%::press
 
 	SendInput % "{" . sprintKey . " down}"
 	Sleep, %keyDelay%
@@ -371,28 +372,28 @@ SprintHold()
 
 	KeyWait, %sprintKey%
 
-	;OutputDebug, SprintHold::release
+	;OutputDebug, %A_ThisFunc%::release
 	SendInput % "{" . sprintKey . " down}"
 	Sleep, %keyDelay%
 	SendInput % "{" . sprintKey . " up}"
 
-	;OutputDebug, SprintHold::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 SprintToggle(pSprinting, pWait := true)
 {
 	global
 
-	;OutputDebug, Sprint::begin
+	;OutputDebug, %A_ThisFunc%::begin
 	bSprinting := pSprinting
-	;OutputDebug, Sprint::bSprinting %bSprinting%
+	;OutputDebug, %A_ThisFunc%::bSprinting %bSprinting%
 
 	SendInput % bSprinting ? "{" . sprintKey . " down}" : "{" . sprintKey . " up}"
 
 	if (pWait)
 		KeyWait, %sprintKey%
 
-	;OutputDebug, Sprint::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 ; Exit script
