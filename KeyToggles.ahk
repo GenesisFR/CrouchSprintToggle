@@ -3,6 +3,8 @@
 ;TODO
 ; add application profiles (https://stackoverflow.com/questions/45190170/how-can-i-make-this-ini-file-into-a-listview-in-autohotkey)
 ; add overlay
+; fix Escape while Ctrl is toggled
+; fix Windows while Ctrl/Alt is toggled
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -201,7 +203,7 @@ CrouchHold()
 	;OutputDebug, %A_ThisFunc%::end
 }
 
-CrouchToggle(pCrouching, pWait := true)
+CrouchToggle(pCrouching, pWait := false)
 {
 	global
 
@@ -221,9 +223,16 @@ ReleaseAllKeys()
 {
 	global
 
-	AimToggle(false)
-	CrouchToggle(false)
-	SprintToggle(false)
+	OutputDebug, %A_ThisFunc%::bAiming %bAiming%
+	OutputDebug, %A_ThisFunc%::bCrouching %bCrouching%
+	OutputDebug, %A_ThisFunc%::bSprinting %bSprinting%
+
+	if (bAiming)
+		AimToggle(false)
+	if (bCrouching)
+		CrouchToggle(false)
+	if (bSprinting)
+		SprintToggle(false)
 
 	bAutofireAiming := false
 	bAutofireCrouching := false
@@ -246,7 +255,7 @@ HookWindow()
 	GroupAdd, windowIDGroup, ahk_id %windowID%
 	Hotkey, IfWinActive, ahk_group windowIDGroup
 	OutputDebug, %A_ThisFunc%::end
-	
+
 	if (windowID && bShowNotifications)
 		TrayTip, %configFileNameTrimmed%, % "The window """ . sWindowName . """ has been hooked."
 }
@@ -383,7 +392,7 @@ SprintHold()
 	;OutputDebug, %A_ThisFunc%::end
 }
 
-SprintToggle(pSprinting, pWait := true)
+SprintToggle(pSprinting, pWait := false)
 {
 	global
 
