@@ -4,6 +4,7 @@
 ; add application profiles (https://stackoverflow.com/questions/45190170/how-can-i-make-this-ini-file-into-a-listview-in-autohotkey)
 ; add overlay
 ; fix Escape while Ctrl is toggled
+; fix left click outside the window not working when the right click is toggled
 ; fix Windows while Ctrl/Alt is toggled
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
@@ -34,6 +35,7 @@ bAutofireSprinting := false
 bRestoreAiming := false
 bRestoreCrouching := false
 bRestoreSprinting := false
+bRestoreHandled := false
 windowID := 0
 
 configFileNameTrimmed := RTrim(A_ScriptName, A_IsCompiled ? ".exe" : ".ahk")
@@ -219,30 +221,6 @@ CrouchToggle(pCrouching, pWait := false)
 	;OutputDebug, %A_ThisFunc%::end
 }
 
-ReleaseAllKeys()
-{
-	global
-
-	OutputDebug, %A_ThisFunc%::bAiming %bAiming%
-	OutputDebug, %A_ThisFunc%::bCrouching %bCrouching%
-	OutputDebug, %A_ThisFunc%::bSprinting %bSprinting%
-
-	if (bAiming)
-		AimToggle(false)
-	if (bCrouching)
-		CrouchToggle(false)
-	if (bSprinting)
-		SprintToggle(false)
-
-	bAutofireAiming := false
-	bAutofireCrouching := false
-	bAutofireSprinting := false
-
-	SetTimer, AimAutofire, Off
-	SetTimer, CrouchAutofire, Off
-	SetTimer, SprintAutofire, Off
-}
-
 HookWindow()
 {
 	; All the variables below are declared as global so they can be used in the whole script
@@ -304,9 +282,15 @@ OnFocusChanged()
 	{
 		OutputDebug, %A_ThisFunc%::saveToggleStates
 
-		bRestoreAiming := bAiming
-		bRestoreCrouching := bCrouching
-		bRestoreSprinting := bSprinting
+		; A snapshot of the toggle states was already taken elsewhere, don't take another one
+		if (bRestoreHandled)
+			bRestoreHandled := false
+		else
+		{
+			bRestoreAiming := bAiming
+			bRestoreCrouching := bCrouching
+			bRestoreSprinting := bSprinting
+		}
 	}
 
 	ReleaseAllKeys()
@@ -356,6 +340,68 @@ RegisterHotkeys()
 	Hotkey, %aimAutofireKey%, aimLabel, % bAimMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
 	Hotkey, %crouchAutofireKey%, crouchLabel, % bCrouchMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
 	Hotkey, %sprintAutofireKey%, sprintLabel, % bSprintMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
+
+	; Used to release Control and Shift if they're physically pressed
+	Hotkey, !Tab, SendAltTab, On
+}
+
+ReleaseAllKeys()
+{
+	global
+
+	OutputDebug, %A_ThisFunc%::bAiming %bAiming%
+	OutputDebug, %A_ThisFunc%::bCrouching %bCrouching%
+	OutputDebug, %A_ThisFunc%::bSprinting %bSprinting%
+
+	if (bAiming)
+		AimToggle(false)
+	if (bCrouching)
+		CrouchToggle(false)
+	if (bSprinting)
+		SprintToggle(false)
+
+	bAutofireAiming := false
+	bAutofireCrouching := false
+	bAutofireSprinting := false
+
+	SetTimer, AimAutofire, Off
+	SetTimer, CrouchAutofire, Off
+	SetTimer, SprintAutofire, Off
+}
+
+SendAltTab()
+{
+	global
+
+	OutputDebug, %A_ThisFunc%::begin
+
+	; Check if keys are physically pressed
+	isCtrlPressed := GetKeyState("Control", "P")
+	isShiftPressed := GetKeyState("Shift", "P")
+
+	OutputDebug, %A_ThisFunc%::isCtrlPressed %isCtrlPressed%
+	OutputDebug, %A_ThisFunc%::isShiftPressed %isShiftPressed%
+
+	; Take a snapshot of the toggle states
+	if (bRestoreTogglesOnFocus)
+	{
+		bRestoreAiming := bAiming
+		bRestoreCrouching := bCrouching
+		bRestoreSprinting := bSprinting
+		bRestoreHandled := true
+	}
+	
+	ReleaseAllKeys()
+
+	; Handle Ctrl+Alt+Tab, Shift+Alt+Tab and Ctrl+Shift+Alt+Tab
+	if (isCtrlPressed)
+		Send {Control down}
+	if (isShiftPressed)
+		Send {Shift down}
+
+	Send {Alt down}{Tab}
+
+	OutputDebug, %A_ThisFunc%::end
 }
 
 SprintAutofire()
