@@ -3,7 +3,6 @@
 ;TODO
 ; add application profiles (https://stackoverflow.com/questions/45190170/how-can-i-make-this-ini-file-into-a-listview-in-autohotkey)
 ; add overlay
-; fix Escape while Ctrl is toggled
 ; fix left click outside the window not working when the right click is toggled
 ; fix Windows while Ctrl/Alt is toggled
 
@@ -343,6 +342,8 @@ RegisterHotkeys()
 
 	; Used to release Control and Shift if they're physically pressed
 	Hotkey, !Tab, SendAltTab, On
+	; Used to release Control if it's physically pressed
+	Hotkey, Escape, SendEscape, On
 }
 
 ReleaseAllKeys()
@@ -390,16 +391,47 @@ SendAltTab()
 		bRestoreSprinting := bSprinting
 		bRestoreHandled := true
 	}
-	
+
 	ReleaseAllKeys()
 
 	; Handle Ctrl+Alt+Tab, Shift+Alt+Tab and Ctrl+Shift+Alt+Tab
 	if (isCtrlPressed)
-		Send {Control down}
+		SendInput {Control down}
 	if (isShiftPressed)
-		Send {Shift down}
+		SendInput {Shift down}
 
-	Send {Alt down}{Tab}
+	SendInput {Alt down}{Tab}
+
+	OutputDebug, %A_ThisFunc%::end
+}
+
+SendEscape()
+{
+	global
+
+	OutputDebug, %A_ThisFunc%::begin
+
+	; Check if keys are physically pressed
+	isCtrlPressed := GetKeyState("Control", "P")
+
+	OutputDebug, %A_ThisFunc%::isCtrlPressed %isCtrlPressed%
+
+	; Take a snapshot of the toggle states
+	if (bRestoreTogglesOnFocus)
+	{
+		bRestoreAiming := bAiming
+		bRestoreCrouching := bCrouching
+		bRestoreSprinting := bSprinting
+		bRestoreHandled := true
+	}
+
+	ReleaseAllKeys()
+
+	; Handle Ctrl+Escape
+	if (isCtrlPressed)
+		SendInput {Control down}
+
+	SendInput {Escape}
 
 	OutputDebug, %A_ThisFunc%::end
 }
