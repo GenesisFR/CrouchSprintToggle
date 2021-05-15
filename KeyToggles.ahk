@@ -4,7 +4,6 @@
 ; add application profiles (https://stackoverflow.com/questions/45190170/how-can-i-make-this-ini-file-into-a-listview-in-autohotkey)
 ; add overlay
 ; fix left click outside the window not working when the right click is toggled
-; fix Windows while Ctrl/Alt is toggled
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -362,6 +361,8 @@ RegisterHotkeys()
 	; Fixes various issues when pressing system keys
 	Hotkey, !Tab, SendAltTab, On
 	Hotkey, Escape, SendEscape, On
+	Hotkey, LWin, SendWindows, On
+	Hotkey, RWin, SendWindows, On
 }
 
 ReleaseAllKeys()
@@ -450,6 +451,37 @@ SendEscape()
 		SendInput {Control down}
 
 	SendInput {Escape}
+
+	OutputDebug, %A_ThisFunc%::end
+}
+
+SendWindows()
+{
+	global
+
+	OutputDebug, %A_ThisFunc%::begin
+
+	; Check if keys are physically pressed
+	isShiftPressed := GetKeyState("Shift", "P")
+
+	OutputDebug, %A_ThisFunc%::isShiftPressed %isShiftPressed%
+
+	; Take a snapshot of the toggle states
+	if (bRestoreTogglesOnFocus)
+	{
+		bRestoreAiming := bAiming
+		bRestoreCrouching := bCrouching
+		bRestoreSprinting := bSprinting
+		bRestoreHandled := true
+	}
+
+	ReleaseAllKeys()
+
+	; Handle Shift+Win
+	if (isShiftPressed)
+		SendInput {Shift down}
+
+	SendInput {LWin}
 
 	OutputDebug, %A_ThisFunc%::end
 }
