@@ -37,6 +37,9 @@ bRestoreSprinting := false
 bRestoreHandled := false
 windowID := 0
 
+; A handy label to allow quickly jumping back to top in AHK Studio
+init:
+
 configFileNameTrimmed := RTrim(A_ScriptName, A_IsCompiled ? ".exe" : ".ahk")
 configFileName := configFileNameTrimmed . ".ini"
 OutputDebug, init::configFileName %configFileName%
@@ -46,6 +49,21 @@ if (!FileExist(configFileName))
 	ExitWithErrorMessage(configFileName . " not found! The script will now exit.")
 
 ReadConfigFile()
+
+; Restart the script as admin
+if (bRunAsAdmin && !A_IsAdmin)
+{
+	try
+	{
+		if A_IsCompiled
+			Run *RunAs "%A_ScriptFullPath%" /restart
+		else
+			Run *RunAs "%A_AhkPath%" /restart "%A_ScriptFullPath%"
+
+		ExitApp
+	}
+}
+
 SetTimer, OnFocusChanged, %nFocusCheckDelay%
 
 return
@@ -313,6 +331,7 @@ ReadConfigFile()
 	IniRead, nKeyDelay, %configFileName%, General, keyDelay, 0
 	IniRead, bRestoreTogglesOnFocus, %configFileName%, General, restoreTogglesOnFocus, 0
 	IniRead, bShowNotifications, %configFileName%, General, showNotifications, 0
+	IniRead, bRunAsAdmin, %configFileName%, General, runAsAdmin, 0
 
 	; Keys
 	IniRead, aimKey, %configFileName%, Keys, aimKey, RButton
@@ -340,9 +359,8 @@ RegisterHotkeys()
 	Hotkey, %crouchAutofireKey%, crouchLabel, % bCrouchMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
 	Hotkey, %sprintAutofireKey%, sprintLabel, % bSprintMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
 
-	; Used to release Control and Shift if they're physically pressed
+	; Fixes various issues when pressing system keys
 	Hotkey, !Tab, SendAltTab, On
-	; Used to release Control if it's physically pressed
 	Hotkey, Escape, SendEscape, On
 }
 
@@ -489,7 +507,11 @@ SprintToggle(pSprinting, pWait := false)
 ; Exit script
 ExitFunc(ExitReason, ExitCode)
 {
-	ReleaseAllKeys()
+	;OutputDebug, %A_ThisFunc%::ExitReason(%ExitReason%) ExitCode(%ExitCode%)
+
+	; Only release keys if the script is closed from the tray menu or reloaded/replaced
+	if (ExitReason != "Exit")
+		ReleaseAllKeys()
 }
 
 ; Display an error message and exit
