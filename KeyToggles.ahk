@@ -19,9 +19,9 @@ SetWorkingDir %A_ScriptDir%      ; Ensures a consistent starting directory.
 OnExit("ExitFunc")
 
 ; Constants
-AIM_MODE_TOGGLE := 1
-AIM_MODE_HOLD := 2
-AIM_MODE_AUTOFIRE := 3
+KEY_MODE_TOGGLE := 1
+KEY_MODE_HOLD := 2
+KEY_MODE_AUTOFIRE := 3
 
 ; Initialize state variables
 bAiming := false
@@ -73,13 +73,13 @@ aimLabel:
 
 switch bAimMode
 {
-	case AIM_MODE_TOGGLE:
+	case KEY_MODE_TOGGLE:
 		AimToggle(!bAiming, true)
 		return
-	case AIM_MODE_HOLD:
+	case KEY_MODE_HOLD:
 		AimHold()
 		return
-	case AIM_MODE_AUTOFIRE:
+	case KEY_MODE_AUTOFIRE:
 		; Based on https://autohotkey.com/board/topic/64576-the-definitive-autofire-thread/?p=407264
 		bAutofireAiming := !bAutofireAiming
 		SetTimer, AimAutofire, % bAutofireAiming ? nAutofireKeyDelay : "Off"
@@ -97,13 +97,13 @@ crouchLabel:
 
 switch bCrouchMode
 {
-	case AIM_MODE_TOGGLE:
+	case KEY_MODE_TOGGLE:
 		CrouchToggle(!bCrouching, true)
 		return
-	case AIM_MODE_HOLD:
+	case KEY_MODE_HOLD:
 		CrouchHold()
 		return
-	case AIM_MODE_AUTOFIRE:
+	case KEY_MODE_AUTOFIRE:
 		bAutofireCrouching := !bAutofireCrouching
 		SetTimer, CrouchAutofire, % bAutofireCrouching ? nAutofireKeyDelay : "Off"
 		KeyWait, %crouchAutofireKey%
@@ -120,13 +120,13 @@ sprintLabel:
 
 switch bSprintMode
 {
-	case AIM_MODE_TOGGLE:
+	case KEY_MODE_TOGGLE:
 		SprintToggle(!bSprinting, true)
 		return
-	case AIM_MODE_HOLD:
+	case KEY_MODE_HOLD:
 		SprintHold()
 		return
-	case AIM_MODE_AUTOFIRE:
+	case KEY_MODE_AUTOFIRE:
 		bAutofireSprinting := !bAutofireSprinting
 		SetTimer, SprintAutofire, % bAutofireSprinting ? nAutofireKeyDelay : "Off"
 		KeyWait, %sprintAutofireKey%
@@ -278,9 +278,9 @@ OnFocusChanged()
 	}
 
 	; Restore toggle states
-	if (bRestoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE)
+	if (ShouldRestoreTogglesOnFocus())
 	{
-		OutputDebug, %A_ThisFunc%::restoreToggleStates
+		OutputDebug, %A_ThisFunc%::restoreToggleStates (%bRestoreAiming%, %bRestoreCrouching%, %bRestoreSprinting%)
 
 		if (bRestoreAiming)
 			AimToggle(true)
@@ -294,7 +294,7 @@ OnFocusChanged()
 	WinWaitNotActive, %sWindowName%
 
 	; Save toggle states
-	if (bRestoreTogglesOnFocus && bAimMode == AIM_MODE_TOGGLE && WinExist(sWindowName))
+	if (ShouldRestoreTogglesOnFocus())
 	{
 		OutputDebug, %A_ThisFunc%::saveToggleStates
 
@@ -349,16 +349,16 @@ RegisterHotkeys()
 	global
 
 	; Enabled only for toggle and hold modes
-	Hotkey, %aimKey%, aimLabel, % bAimMode > 0 && bAimMode < AIM_MODE_AUTOFIRE ? "On" : "Off"
-	Hotkey, %crouchKey%, crouchLabel, % bCrouchMode > 0 && bCrouchMode < AIM_MODE_AUTOFIRE ? "On" : "Off"
-	Hotkey, %sprintKey%, sprintLabel, % bSprintMode > 0 && bSprintMode < AIM_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %aimKey%, aimLabel, % bAimMode > 0 && bAimMode < KEY_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %crouchKey%, crouchLabel, % bCrouchMode > 0 && bCrouchMode < KEY_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %sprintKey%, sprintLabel, % bSprintMode > 0 && bSprintMode < KEY_MODE_AUTOFIRE ? "On" : "Off"
 
 	; Enabled only for autofire mode
-	Hotkey, %aimAutofireKey%, aimLabel, % bAimMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
-	Hotkey, %crouchAutofireKey%, crouchLabel, % bCrouchMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
-	Hotkey, %sprintAutofireKey%, sprintLabel, % bSprintMode == AIM_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %aimAutofireKey%, aimLabel, % bAimMode == KEY_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %crouchAutofireKey%, crouchLabel, % bCrouchMode == KEY_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %sprintAutofireKey%, sprintLabel, % bSprintMode == KEY_MODE_AUTOFIRE ? "On" : "Off"
 
-	; Fixes various issues when pressing system keys
+	; Fixes issues when pressing system keys while toggle keys are enabled
 	Hotkey, !Tab, SendAltTab, On
 	Hotkey, Escape, SendEscape, On
 	Hotkey, LWin, SendWindows, On
@@ -369,9 +369,7 @@ ReleaseAllKeys()
 {
 	global
 
-	OutputDebug, %A_ThisFunc%::bAiming %bAiming%
-	OutputDebug, %A_ThisFunc%::bCrouching %bCrouching%
-	OutputDebug, %A_ThisFunc%::bSprinting %bSprinting%
+	OutputDebug, %A_ThisFunc%::values (%bAiming%, %bCrouching%, %bSprinting%)
 
 	if (bAiming)
 		AimToggle(false)
@@ -403,7 +401,7 @@ SendAltTab()
 	OutputDebug, %A_ThisFunc%::isShiftPressed %isShiftPressed%
 
 	; Take a snapshot of the toggle states
-	if (bRestoreTogglesOnFocus)
+	if (ShouldRestoreTogglesOnFocus())
 	{
 		bRestoreAiming := bAiming
 		bRestoreCrouching := bCrouching
@@ -436,7 +434,7 @@ SendEscape()
 	OutputDebug, %A_ThisFunc%::isCtrlPressed %isCtrlPressed%
 
 	; Take a snapshot of the toggle states
-	if (bRestoreTogglesOnFocus)
+	if (ShouldRestoreTogglesOnFocus())
 	{
 		bRestoreAiming := bAiming
 		bRestoreCrouching := bCrouching
@@ -467,7 +465,7 @@ SendWindows()
 	OutputDebug, %A_ThisFunc%::isShiftPressed %isShiftPressed%
 
 	; Take a snapshot of the toggle states
-	if (bRestoreTogglesOnFocus)
+	if (ShouldRestoreTogglesOnFocus())
 	{
 		bRestoreAiming := bAiming
 		bRestoreCrouching := bCrouching
@@ -484,6 +482,12 @@ SendWindows()
 	SendInput {LWin}
 
 	OutputDebug, %A_ThisFunc%::end
+}
+
+ShouldRestoreTogglesOnFocus()
+{
+	global
+	return bRestoreTogglesOnFocus && bAimMode == KEY_MODE_TOGGLE || bCrouchMode == KEY_MODE_TOGGLE || bSprintMode == KEY_MODE_TOGGLE && WinExist(sWindowName)
 }
 
 SprintAutofire()
