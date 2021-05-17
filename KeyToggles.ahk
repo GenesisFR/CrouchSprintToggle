@@ -1,9 +1,8 @@
 ; KeyToggles v1.4
 
-;TODO
+; TODO
 ; add application profiles (https://stackoverflow.com/questions/45190170/how-can-i-make-this-ini-file-into-a-listview-in-autohotkey)
 ; add overlay
-; fix left click outside the window not working when the right click is toggled
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -74,7 +73,19 @@ aimLabel:
 switch bAimMode
 {
 	case KEY_MODE_TOGGLE:
-		AimToggle(!bAiming, true)
+		isMouseButton := IsMouseButton(A_ThisHotkey)
+		;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%)
+
+		; Send a regular click if the hotkey is a mouse button clicked outside the window
+		if (isMouseButton && !IsMouseOverWindow(windowID))
+		{
+			;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
+			SendClick(A_ThisHotkey)
+		}
+		; Otherwise toggle the key
+		else
+			AimToggle(!bAiming, true)
+
 		return
 	case KEY_MODE_HOLD:
 		AimHold()
@@ -98,7 +109,17 @@ crouchLabel:
 switch bCrouchMode
 {
 	case KEY_MODE_TOGGLE:
-		CrouchToggle(!bCrouching, true)
+		isMouseButton := IsMouseButton(A_ThisHotkey)
+		OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%)
+
+		if (isMouseButton && !IsMouseOverWindow(windowID))
+		{
+			OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
+			SendClick(A_ThisHotkey)
+		}
+		else
+			CrouchToggle(!bCrouching, true)
+
 		return
 	case KEY_MODE_HOLD:
 		CrouchHold()
@@ -121,7 +142,17 @@ sprintLabel:
 switch bSprintMode
 {
 	case KEY_MODE_TOGGLE:
-		SprintToggle(!bSprinting, true)
+		isMouseButton := IsMouseButton(A_ThisHotkey)
+		OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%)
+
+		if (isMouseButton && !IsMouseOverWindow(windowID))
+		{
+			OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
+			SendClick(A_ThisHotkey)
+		}
+		else
+			SprintToggle(!bSprinting, true)
+
 		return
 	case KEY_MODE_HOLD:
 		SprintHold()
@@ -155,7 +186,6 @@ AimHold()
 	global
 
 	;OutputDebug, %A_ThisFunc%::begin
-	;OutputDebug, %A_ThisFunc%::press
 
 	SendInput % "{" . aimKey . " down}"
 	Sleep, %nKeyDelay%
@@ -163,7 +193,6 @@ AimHold()
 
 	KeyWait, %aimKey%
 
-	;OutputDebug, %A_ThisFunc%::release
 	SendInput % "{" . aimKey . " down}"
 	Sleep, %nKeyDelay%
 	SendInput % "{" . aimKey . " up}"
@@ -205,7 +234,6 @@ CrouchHold()
 	global
 
 	;OutputDebug, %A_ThisFunc%::begin
-	;OutputDebug, %A_ThisFunc%::press
 
 	SendInput % "{" . crouchKey . " down}"
 	Sleep, %nKeyDelay%
@@ -213,7 +241,6 @@ CrouchHold()
 
 	KeyWait, %crouchKey%
 
-	;OutputDebug, %A_ThisFunc%::release
 	SendInput % "{" . crouchKey . " down}"
 	Sleep, %nKeyDelay%
 	SendInput % "{" . crouchKey . " up}"
@@ -252,6 +279,18 @@ HookWindow()
 
 	if (windowID && bShowNotifications)
 		TrayTip, %configFileNameTrimmed%, % "The window """ . sWindowName . """ has been hooked."
+}
+
+IsMouseButton(pKey)
+{
+	return InStr(pKey, "LButton") || InStr(pKey, "MButton") || InStr(pKey, "RButton") || InStr(pKey, "XButton1") || InStr(pKey, "XButton2")
+}
+
+IsMouseOverWindow(hwnd)
+{
+	global
+	MouseGetPos, , , mouseWindowID
+	return hwnd == mouseWindowID
 }
 
 ; Disable toggles on focus lost and optionally restore them on focus
@@ -358,7 +397,7 @@ RegisterHotkeys()
 	Hotkey, %crouchAutofireKey%, crouchLabel, % bCrouchMode == KEY_MODE_AUTOFIRE ? "On" : "Off"
 	Hotkey, %sprintAutofireKey%, sprintLabel, % bSprintMode == KEY_MODE_AUTOFIRE ? "On" : "Off"
 
-	; Fixes issues when pressing system keys while toggle keys are enabled
+	; Fixes issues when pressing system keys while toggle keys are modifiers and are enabled
 	Hotkey, !Tab, SendAltTab, On
 	Hotkey, Escape, SendEscape, On
 	Hotkey, LWin, SendWindows, On
@@ -418,6 +457,30 @@ SendAltTab()
 		SendInput {Shift down}
 
 	SendInput {Alt down}{Tab}
+
+	OutputDebug, %A_ThisFunc%::end
+}
+
+SendClick(pKey)
+{
+	global
+
+	OutputDebug, %A_ThisFunc%::begin
+
+	; Take a snapshot of the toggle states
+	if (ShouldRestoreTogglesOnFocus())
+	{
+		bRestoreAiming := bAiming
+		bRestoreCrouching := bCrouching
+		bRestoreSprinting := bSprinting
+		bRestoreHandled := true
+	}
+
+	ReleaseAllKeys()
+
+	SendInput % "{" . pKey . " down}"
+	KeyWait, %pKey%
+	SendInput % "{" . pKey . " up}"
 
 	OutputDebug, %A_ThisFunc%::end
 }
@@ -508,7 +571,6 @@ SprintHold()
 	global
 
 	;OutputDebug, %A_ThisFunc%::begin
-	;OutputDebug, %A_ThisFunc%::press
 
 	SendInput % "{" . sprintKey . " down}"
 	Sleep, %nKeyDelay%
@@ -516,7 +578,6 @@ SprintHold()
 
 	KeyWait, %sprintKey%
 
-	;OutputDebug, %A_ThisFunc%::release
 	SendInput % "{" . sprintKey . " down}"
 	Sleep, %nKeyDelay%
 	SendInput % "{" . sprintKey . " up}"
@@ -556,6 +617,31 @@ ExitWithErrorMessage(ErrorMessage)
 	MsgBox, 16, Error, %ErrorMessage%
 	ExitApp, 1
 }
+
+#IfWinActive ahk_group windowIDGroup
+LButton::
+MButton::
+RButton::
+XButton1::
+XButton2::
+;OutputDebug, %A_ThisHotkey%::begin
+
+if (!IsMouseOverWindow(windowID))
+{
+	;OutputDebug, %A_ThisHotkey%::outside window
+	SendClick(A_ThisHotkey)
+}
+else
+{
+	;OutputDebug, %A_ThisHotkey%::click
+	SendInput % "{" . A_ThisHotkey . " down}"
+	KeyWait, %A_ThisHotkey%
+	SendInput % "{" . A_ThisHotkey . " up}"
+}
+
+;OutputDebug, %A_ThisHotkey%::end
+return
+#IfWinActive
 
 ; Suspend script (useful when in menus)
 !F12:: ; ALT+F12
