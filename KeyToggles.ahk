@@ -3,6 +3,7 @@
 ; TODO
 ; add application profiles (https://stackoverflow.com/questions/45190170/how-can-i-make-this-ini-file-into-a-listview-in-autohotkey)
 ; add overlay
+; merge similar functions
 
 #MaxThreadsPerHotkey 1           ; Prevent accidental double-presses.
 #NoEnv                           ; Recommended for performance and compatibility with future AutoHotkey releases.
@@ -37,33 +38,9 @@ windowID := 0
 
 ; A handy label to allow quickly jumping back to top in AHK Studio
 init:
-
-configFileNameTrimmed := RTrim(A_ScriptName, A_IsCompiled ? ".exe" : ".ahk")
-configFileName := configFileNameTrimmed . ".ini"
-OutputDebug, init::configFileName %configFileName%
-
-; Config file is missing, exit
-if (!FileExist(configFileName))
-	ExitWithErrorMessage(configFileName . " not found! The script will now exit.")
-
 ReadConfigFile()
-
-; Restart the script as admin
-if (bRunAsAdmin && !A_IsAdmin)
-{
-	try
-	{
-		if A_IsCompiled
-			Run *RunAs "%A_ScriptFullPath%" /restart
-		else
-			Run *RunAs "%A_AhkPath%" /restart "%A_ScriptFullPath%"
-
-		ExitApp
-	}
-}
-
+RunAsAdminIfNeeded()
 SetTimer, OnFocusChanged, %nFocusCheckDelay%
-
 return
 
 aimLabel:
@@ -74,10 +51,11 @@ switch bAimMode
 {
 	case KEY_MODE_TOGGLE:
 		isMouseButton := IsMouseButton(A_ThisHotkey)
-		;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%)
+		isMouseOverWindow := IsMouseOverWindow(windowID)
+		;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%) isMouseOverWindow(%isMouseOverWindow%)
 
 		; Send a regular click if the hotkey is a mouse button clicked outside the window
-		if (isMouseButton && !IsMouseOverWindow(windowID))
+		if (isMouseButton && !isMouseOverWindow)
 		{
 			;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
 			SendClick(A_ThisHotkey)
@@ -98,8 +76,6 @@ switch bAimMode
 		return
 }
 
-;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% end
-
 return
 
 crouchLabel:
@@ -110,11 +86,13 @@ switch bCrouchMode
 {
 	case KEY_MODE_TOGGLE:
 		isMouseButton := IsMouseButton(A_ThisHotkey)
-		OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%)
+		isMouseOverWindow := IsMouseOverWindow(windowID)
+		;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%) isMouseOverWindow(%isMouseOverWindow%)
 
-		if (isMouseButton && !IsMouseOverWindow(windowID))
+		; Send a regular click if the hotkey is a mouse button clicked outside the window
+		if (isMouseButton && !isMouseOverWindow)
 		{
-			OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
+			;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
 			SendClick(A_ThisHotkey)
 		}
 		else
@@ -131,8 +109,6 @@ switch bCrouchMode
 		return
 }
 
-;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% end
-
 return
 
 sprintLabel:
@@ -143,11 +119,13 @@ switch bSprintMode
 {
 	case KEY_MODE_TOGGLE:
 		isMouseButton := IsMouseButton(A_ThisHotkey)
-		OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%)
+		isMouseOverWindow := IsMouseOverWindow(windowID)
+		;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%) isMouseOverWindow(%isMouseOverWindow%)
 
-		if (isMouseButton && !IsMouseOverWindow(windowID))
+		; Send a regular click if the hotkey is a mouse button clicked outside the window
+		if (isMouseButton && !isMouseOverWindow)
 		{
-			OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
+			;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
 			SendClick(A_ThisHotkey)
 		}
 		else
@@ -164,8 +142,6 @@ switch bSprintMode
 		return
 }
 
-;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% end
-
 return
 
 AimAutofire()
@@ -173,11 +149,7 @@ AimAutofire()
 	global
 
 	;OutputDebug, %A_ThisFunc%::begin
-
-	SendInput % "{" . aimKey . " down}"
-	Sleep, %nKeyDelay%
-	SendInput % "{" . aimKey . " up}"
-
+	SendKey(aimKey, nKeyDelay)
 	;OutputDebug, %A_ThisFunc%::end
 }
 
@@ -186,17 +158,9 @@ AimHold()
 	global
 
 	;OutputDebug, %A_ThisFunc%::begin
-
-	SendInput % "{" . aimKey . " down}"
-	Sleep, %nKeyDelay%
-	SendInput % "{" . aimKey . " up}"
-
+	SendKey(aimKey, nKeyDelay)
 	KeyWait, %aimKey%
-
-	SendInput % "{" . aimKey . " down}"
-	Sleep, %nKeyDelay%
-	SendInput % "{" . aimKey . " up}"
-
+	SendKey(aimKey, nKeyDelay)
 	;OutputDebug, %A_ThisFunc%::end
 }
 
@@ -206,7 +170,7 @@ AimToggle(pAiming, pWait := false)
 
 	;OutputDebug, %A_ThisFunc%::begin
 	bAiming := pAiming
-	;OutputDebug, %A_ThisFunc%::bAiming %bAiming%
+	;OutputDebug, %A_ThisFunc%::bAiming(%bAiming%)
 
 	SendInput % bAiming ? "{" . aimKey . " down}" : "{" . aimKey . " up}"
 
@@ -221,11 +185,7 @@ CrouchAutofire()
 	global
 
 	;OutputDebug, %A_ThisFunc%::begin
-
-	SendInput % "{" . crouchKey . " down}"
-	Sleep, %nKeyDelay%
-	SendInput % "{" . crouchKey . " up}"
-
+	SendKey(crouchKey, nKeyDelay)
 	;OutputDebug, %A_ThisFunc%::end
 }
 
@@ -234,17 +194,9 @@ CrouchHold()
 	global
 
 	;OutputDebug, %A_ThisFunc%::begin
-
-	SendInput % "{" . crouchKey . " down}"
-	Sleep, %nKeyDelay%
-	SendInput % "{" . crouchKey . " up}"
-
+	SendKey(crouchKey, nKeyDelay)
 	KeyWait, %crouchKey%
-
-	SendInput % "{" . crouchKey . " down}"
-	Sleep, %nKeyDelay%
-	SendInput % "{" . crouchKey . " up}"
-
+	SendKey(crouchKey, nKeyDelay)
 	;OutputDebug, %A_ThisFunc%::end
 }
 
@@ -254,7 +206,7 @@ CrouchToggle(pCrouching, pWait := false)
 
 	;OutputDebug, %A_ThisFunc%::begin
 	bCrouching := pCrouching
-	;OutputDebug, %A_ThisFunc%::bCrouching %bCrouching%
+	;OutputDebug, %A_ThisFunc%::bCrouching(%bCrouching%)
 
 	SendInput % bCrouching ? "{" . crouchKey . " down}" : "{" . crouchKey . " up}"
 
@@ -270,12 +222,10 @@ HookWindow()
 	global
 
 	; Make the hotkeys active only for a specific window
-	OutputDebug, %A_ThisFunc%::begin
 	WinGet, windowID, ID, %sWindowName%
-	OutputDebug, %A_ThisFunc%::WinGet %windowID%
+	OutputDebug, %A_ThisFunc%::WinGet(%windowID%)
 	GroupAdd, windowIDGroup, ahk_id %windowID%
 	Hotkey, IfWinActive, ahk_group windowIDGroup
-	OutputDebug, %A_ThisFunc%::end
 
 	if (windowID && bShowNotifications)
 		TrayTip, %configFileNameTrimmed%, % "The window """ . sWindowName . """ has been hooked."
@@ -298,8 +248,6 @@ OnFocusChanged()
 {
 	global
 
-	OutputDebug, %A_ThisFunc%::begin
-
 	OutputDebug, %A_ThisFunc%::WinWaitActive
 	WinWaitActive, %sWindowName%
 	Sleep, %nHookDelay%
@@ -319,7 +267,7 @@ OnFocusChanged()
 	; Restore toggle states
 	if (ShouldRestoreTogglesOnFocus())
 	{
-		OutputDebug, %A_ThisFunc%::restoreToggleStates (%bRestoreAiming%, %bRestoreCrouching%, %bRestoreSprinting%)
+		OutputDebug, %A_ThisFunc%::restoreToggleStates(%bRestoreAiming%, %bRestoreCrouching%, %bRestoreSprinting%)
 
 		if (bRestoreAiming)
 			AimToggle(true)
@@ -349,14 +297,19 @@ OnFocusChanged()
 	}
 
 	ReleaseAllKeys()
-
-	OutputDebug, %A_ThisFunc%::end
 }
 
 ReadConfigFile()
 {
 	; All the variables below are declared as global so they can be used in the whole script
 	global
+
+	SplitPath, A_ScriptName, , , , configFileNameTrimmed
+	configFileName := configFileNameTrimmed . ".ini"
+
+	; Config file is missing, exit
+	if (!FileExist(configFileName))
+		ExitWithErrorMessage(configFileName . " not found! The script will now exit.")
 
 	; General
 	IniRead, sWindowName, %configFileName%, General, windowName, "put_window_name_here"
@@ -408,7 +361,7 @@ ReleaseAllKeys()
 {
 	global
 
-	OutputDebug, %A_ThisFunc%::values (%bAiming%, %bCrouching%, %bSprinting%)
+	OutputDebug, %A_ThisFunc%::values(%bAiming%, %bCrouching%, %bSprinting%)
 
 	if (bAiming)
 		AimToggle(false)
@@ -426,18 +379,30 @@ ReleaseAllKeys()
 	SetTimer, SprintAutofire, Off
 }
 
+RunAsAdminIfNeeded()
+{
+	global
+
+	; Restart the script as admin
+	if (bRunAsAdmin && !A_IsAdmin)
+	{
+		try
+		{
+			if A_IsCompiled
+				Run *RunAs "%A_ScriptFullPath%" /restart
+			else
+				Run *RunAs "%A_AhkPath%" /restart "%A_ScriptFullPath%"
+
+			ExitApp
+		}
+	}
+}
+
 SendAltTab()
 {
 	global
 
-	OutputDebug, %A_ThisFunc%::begin
-
-	; Check if keys are physically pressed
-	isCtrlPressed := GetKeyState("Control", "P")
-	isShiftPressed := GetKeyState("Shift", "P")
-
-	OutputDebug, %A_ThisFunc%::isCtrlPressed %isCtrlPressed%
-	OutputDebug, %A_ThisFunc%::isShiftPressed %isShiftPressed%
+	;OutputDebug, %A_ThisFunc%::begin
 
 	; Take a snapshot of the toggle states
 	if (ShouldRestoreTogglesOnFocus())
@@ -450,22 +415,22 @@ SendAltTab()
 
 	ReleaseAllKeys()
 
-	; Handle Ctrl+Alt+Tab, Shift+Alt+Tab and Ctrl+Shift+Alt+Tab
-	if (isCtrlPressed)
+	; Check if modifier keys are physically pressed to handle Ctrl+Alt+Tab, Shift+Alt+Tab and Ctrl+Shift+Alt+Tab
+	if (GetKeyState("Control", "P"))
 		SendInput {Control down}
-	if (isShiftPressed)
+	if (GetKeyState("Shift", "P"))
 		SendInput {Shift down}
 
 	SendInput {Alt down}{Tab}
 
-	OutputDebug, %A_ThisFunc%::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 SendClick(pKey)
 {
 	global
 
-	OutputDebug, %A_ThisFunc%::begin
+	;OutputDebug, %A_ThisFunc%::begin
 
 	; Take a snapshot of the toggle states
 	if (ShouldRestoreTogglesOnFocus())
@@ -477,24 +442,16 @@ SendClick(pKey)
 	}
 
 	ReleaseAllKeys()
+	SendKey(pKey, 0, true)
 
-	SendInput % "{" . pKey . " down}"
-	KeyWait, %pKey%
-	SendInput % "{" . pKey . " up}"
-
-	OutputDebug, %A_ThisFunc%::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 SendEscape()
 {
 	global
 
-	OutputDebug, %A_ThisFunc%::begin
-
-	; Check if keys are physically pressed
-	isCtrlPressed := GetKeyState("Control", "P")
-
-	OutputDebug, %A_ThisFunc%::isCtrlPressed %isCtrlPressed%
+	;OutputDebug, %A_ThisFunc%::begin
 
 	; Take a snapshot of the toggle states
 	if (ShouldRestoreTogglesOnFocus())
@@ -507,25 +464,33 @@ SendEscape()
 
 	ReleaseAllKeys()
 
-	; Handle Ctrl+Escape
-	if (isCtrlPressed)
+	; Check if modifier keys are physically pressed to handle Ctrl+Escape
+	if (GetKeyState("Control", "P"))
 		SendInput {Control down}
 
 	SendInput {Escape}
 
-	OutputDebug, %A_ThisFunc%::end
+	;OutputDebug, %A_ThisFunc%::end
+}
+
+SendKey(pKey, pSleepMs := 0, pWait := false)
+{
+	SendInput % "{" . pKey . " down}"
+
+	if (pSleepMs)
+		Sleep, %pSleepMs%
+
+	if (pWait)
+		KeyWait, %pKey%
+
+	SendInput % "{" . pKey . " up}"
 }
 
 SendWindows()
 {
 	global
 
-	OutputDebug, %A_ThisFunc%::begin
-
-	; Check if keys are physically pressed
-	isShiftPressed := GetKeyState("Shift", "P")
-
-	OutputDebug, %A_ThisFunc%::isShiftPressed %isShiftPressed%
+	;OutputDebug, %A_ThisFunc%::begin
 
 	; Take a snapshot of the toggle states
 	if (ShouldRestoreTogglesOnFocus())
@@ -538,13 +503,13 @@ SendWindows()
 
 	ReleaseAllKeys()
 
-	; Handle Shift+Win
-	if (isShiftPressed)
+	; Check if modifier keys are physically pressed to handle Shift+Win
+	if (GetKeyState("Shift", "P"))
 		SendInput {Shift down}
 
 	SendInput {LWin}
 
-	OutputDebug, %A_ThisFunc%::end
+	;OutputDebug, %A_ThisFunc%::end
 }
 
 ShouldRestoreTogglesOnFocus()
@@ -558,11 +523,7 @@ SprintAutofire()
 	global
 
 	;OutputDebug, %A_ThisFunc%::begin
-
-	SendInput % "{" . sprintKey . " down}"
-	Sleep, %nKeyDelay%
-	SendInput % "{" . sprintKey . " up}"
-
+	SendKey(sprintKey, nKeyDelay)
 	;OutputDebug, %A_ThisFunc%::end
 }
 
@@ -571,17 +532,9 @@ SprintHold()
 	global
 
 	;OutputDebug, %A_ThisFunc%::begin
-
-	SendInput % "{" . sprintKey . " down}"
-	Sleep, %nKeyDelay%
-	SendInput % "{" . sprintKey . " up}"
-
+	SendKey(sprintKey, nKeyDelay)
 	KeyWait, %sprintKey%
-
-	SendInput % "{" . sprintKey . " down}"
-	Sleep, %nKeyDelay%
-	SendInput % "{" . sprintKey . " up}"
-
+	SendKey(sprintKey, nKeyDelay)
 	;OutputDebug, %A_ThisFunc%::end
 }
 
@@ -591,7 +544,7 @@ SprintToggle(pSprinting, pWait := false)
 
 	;OutputDebug, %A_ThisFunc%::begin
 	bSprinting := pSprinting
-	;OutputDebug, %A_ThisFunc%::bSprinting %bSprinting%
+	;OutputDebug, %A_ThisFunc%::bSprinting(%bSprinting%)
 
 	SendInput % bSprinting ? "{" . sprintKey . " down}" : "{" . sprintKey . " up}"
 
@@ -602,19 +555,19 @@ SprintToggle(pSprinting, pWait := false)
 }
 
 ; Exit script
-ExitFunc(ExitReason, ExitCode)
+ExitFunc(pExitReason, pExitCode)
 {
-	;OutputDebug, %A_ThisFunc%::ExitReason(%ExitReason%) ExitCode(%ExitCode%)
+	;OutputDebug, %A_ThisFunc%::pExitReason(%pExitReason%) pExitCode(%pExitCode%)
 
 	; Only release keys if the script is closed from the tray menu or reloaded/replaced
-	if (ExitReason != "Exit")
+	if (pExitReason != "Exit")
 		ReleaseAllKeys()
 }
 
 ; Display an error message and exit
-ExitWithErrorMessage(ErrorMessage)
+ExitWithErrorMessage(pErrorMessage)
 {
-	MsgBox, 16, Error, %ErrorMessage%
+	MsgBox, 16, Error, %pErrorMessage%
 	ExitApp, 1
 }
 
@@ -624,8 +577,6 @@ MButton::
 RButton::
 XButton1::
 XButton2::
-;OutputDebug, %A_ThisHotkey%::begin
-
 if (!IsMouseOverWindow(windowID))
 {
 	;OutputDebug, %A_ThisHotkey%::outside window
@@ -634,12 +585,9 @@ if (!IsMouseOverWindow(windowID))
 else
 {
 	;OutputDebug, %A_ThisHotkey%::click
-	SendInput % "{" . A_ThisHotkey . " down}"
-	KeyWait, %A_ThisHotkey%
-	SendInput % "{" . A_ThisHotkey . " up}"
+	SendKey(A_ThisHotkey, 0, true)
 }
 
-;OutputDebug, %A_ThisHotkey%::end
 return
 #IfWinActive
 
