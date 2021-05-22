@@ -441,7 +441,7 @@ SendKey(pKey, pSleepMs := 0, pWait := false)
 {
 	SendInput % "{" . pKey . " down}"
 
-	if (pSleepMs)
+	if (pSleepMs > 0)
 		Sleep, %pSleepMs%
 
 	if (pWait)
