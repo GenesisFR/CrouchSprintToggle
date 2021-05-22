@@ -421,18 +421,21 @@ SendClick(pKey)
 
 SendEscape()
 {
-	global
-
 	;OutputDebug, %A_ThisFunc%::begin
 
 	; Take a snapshot of the toggle states
 	TakeToggleKeysSnapshot()
 
-	; Check if modifier keys are physically pressed to handle Ctrl+Escape
+	; Check if modifier keys are physically pressed to handle Ctrl+Escape and Ctrl+Shift+Escape
 	if (GetKeyState("Control", "P"))
 		SendInput {Control down}
+	if (GetKeyState("Shift", "P"))
+		SendInput {Shift down}
 
 	SendInput {Escape}
+
+	; Fixes an issue where the window wouldn't receive key up events when pressing Ctrl+Shift+Escape
+	ControlSend, ahk_parent, {Control up}{Shift up}
 
 	;OutputDebug, %A_ThisFunc%::end
 }
