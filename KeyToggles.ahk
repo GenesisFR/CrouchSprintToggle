@@ -33,13 +33,13 @@ bAutofireSprinting := false
 bRestoreAiming := false
 bRestoreCrouching := false
 bRestoreSprinting := false
-bRestoreHandled := false
+bToggleKeysSnapshotTaken := false
 windowID := 0
 
 ; A handy label to allow quickly jumping back to top in AHK Studio
 init:
 ReadConfigFile()
-RunAsAdminIfNeeded()
+RestartAsAdminIfNeeded()
 SetTimer, OnFocusChanged, %nFocusCheckDelay%
 return
 
@@ -54,7 +54,7 @@ switch bAimMode
 		isMouseOverWindow := IsMouseOverWindow(windowID)
 		;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%) isMouseOverWindow(%isMouseOverWindow%)
 
-		; Send a regular click if the hotkey is a mouse button clicked outside the window
+		; Fixes an issue where you couldn't click outside the window if the toggle key was a mouse button and was enabled
 		if (isMouseButton && !isMouseOverWindow)
 		{
 			;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
@@ -63,17 +63,13 @@ switch bAimMode
 		; Otherwise toggle the key
 		else
 			AimToggle(!bAiming, true)
-
-		return
 	case KEY_MODE_HOLD:
 		AimHold()
-		return
 	case KEY_MODE_AUTOFIRE:
 		; Based on https://autohotkey.com/board/topic/64576-the-definitive-autofire-thread/?p=407264
 		bAutofireAiming := !bAutofireAiming
 		SetTimer, AimAutofire, % bAutofireAiming ? nAutofireKeyDelay : "Off"
 		KeyWait, %aimAutofireKey%
-		return
 }
 
 return
@@ -89,7 +85,6 @@ switch bCrouchMode
 		isMouseOverWindow := IsMouseOverWindow(windowID)
 		;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%) isMouseOverWindow(%isMouseOverWindow%)
 
-		; Send a regular click if the hotkey is a mouse button clicked outside the window
 		if (isMouseButton && !isMouseOverWindow)
 		{
 			;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
@@ -97,16 +92,12 @@ switch bCrouchMode
 		}
 		else
 			CrouchToggle(!bCrouching, true)
-
-		return
 	case KEY_MODE_HOLD:
 		CrouchHold()
-		return
 	case KEY_MODE_AUTOFIRE:
 		bAutofireCrouching := !bAutofireCrouching
 		SetTimer, CrouchAutofire, % bAutofireCrouching ? nAutofireKeyDelay : "Off"
 		KeyWait, %crouchAutofireKey%
-		return
 }
 
 return
@@ -122,7 +113,6 @@ switch bSprintMode
 		isMouseOverWindow := IsMouseOverWindow(windowID)
 		;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% isMouseButton(%isMouseButton%) isMouseOverWindow(%isMouseOverWindow%)
 
-		; Send a regular click if the hotkey is a mouse button clicked outside the window
 		if (isMouseButton && !isMouseOverWindow)
 		{
 			;OutputDebug, %A_ThisLabel%::%A_ThisHotkey% outside window
@@ -130,16 +120,12 @@ switch bSprintMode
 		}
 		else
 			SprintToggle(!bSprinting, true)
-
-		return
 	case KEY_MODE_HOLD:
 		SprintHold()
-		return
 	case KEY_MODE_AUTOFIRE:
 		bAutofireSprinting := !bAutofireSprinting
 		SetTimer, SprintAutofire, % bAutofireSprinting ? nAutofireKeyDelay : "Off"
 		KeyWait, %sprintAutofireKey%
-		return
 }
 
 return
@@ -233,14 +219,20 @@ HookWindow()
 
 IsMouseButton(pKey)
 {
-	return InStr(pKey, "LButton") || InStr(pKey, "MButton") || InStr(pKey, "RButton") || InStr(pKey, "XButton1") || InStr(pKey, "XButton2")
+	mouseButtonsList := "LButton MButton RButton XButton1 XButton2"
+	return InStr(mouseButtonsList, pKey) != false
 }
 
-IsMouseOverWindow(hwnd)
+IsMouseOver(pWinTitle)
 {
-	global
+	MouseGetPos, , , winID
+	return WinExist(pWinTitle . " ahk_id " . winID)
+}
+
+IsMouseOverWindow(pHwnd)
+{
 	MouseGetPos, , , mouseWindowID
-	return hwnd == mouseWindowID
+	return pHwnd == mouseWindowID
 }
 
 ; Disable toggles on focus lost and optionally restore them on focus
@@ -283,13 +275,12 @@ OnFocusChanged()
 	; Save toggle states
 	if (ShouldRestoreTogglesOnFocus())
 	{
-		OutputDebug, %A_ThisFunc%::saveToggleStates
-
 		; A snapshot of the toggle states was already taken elsewhere, don't take another one
-		if (bRestoreHandled)
-			bRestoreHandled := false
+		if (bToggleKeysSnapshotTaken)
+			bToggleKeysSnapshotTaken := false
 		else
 		{
+			OutputDebug, %A_ThisFunc%::saveToggleStates(%bRestoreAiming%, %bRestoreCrouching%, %bRestoreSprinting%)
 			bRestoreAiming := bAiming
 			bRestoreCrouching := bCrouching
 			bRestoreSprinting := bSprinting
@@ -341,9 +332,9 @@ RegisterHotkeys()
 	global
 
 	; Enabled only for toggle and hold modes
-	Hotkey, %aimKey%, aimLabel, % bAimMode > 0 && bAimMode < KEY_MODE_AUTOFIRE ? "On" : "Off"
-	Hotkey, %crouchKey%, crouchLabel, % bCrouchMode > 0 && bCrouchMode < KEY_MODE_AUTOFIRE ? "On" : "Off"
-	Hotkey, %sprintKey%, sprintLabel, % bSprintMode > 0 && bSprintMode < KEY_MODE_AUTOFIRE ? "On" : "Off"
+	Hotkey, %aimKey%, aimLabel, % bAimMode == KEY_MODE_TOGGLE || bAimMode == KEY_MODE_HOLD ? "On" : "Off"
+	Hotkey, %crouchKey%, crouchLabel, % bAimMode == KEY_MODE_TOGGLE || bAimMode == KEY_MODE_HOLD ? "On" : "Off"
+	Hotkey, %sprintKey%, sprintLabel, % bAimMode == KEY_MODE_TOGGLE || bAimMode == KEY_MODE_HOLD ? "On" : "Off"
 
 	; Enabled only for autofire mode
 	Hotkey, %aimAutofireKey%, aimLabel, % bAimMode == KEY_MODE_AUTOFIRE ? "On" : "Off"
@@ -361,7 +352,7 @@ ReleaseAllKeys()
 {
 	global
 
-	OutputDebug, %A_ThisFunc%::values(%bAiming%, %bCrouching%, %bSprinting%)
+	OutputDebug, %A_ThisFunc%::states(%bAiming%, %bCrouching%, %bSprinting%)
 
 	if (bAiming)
 		AimToggle(false)
@@ -379,7 +370,7 @@ ReleaseAllKeys()
 	SetTimer, SprintAutofire, Off
 }
 
-RunAsAdminIfNeeded()
+RestartAsAdminIfNeeded()
 {
 	global
 
@@ -400,20 +391,10 @@ RunAsAdminIfNeeded()
 
 SendAltTab()
 {
-	global
-
 	;OutputDebug, %A_ThisFunc%::begin
 
 	; Take a snapshot of the toggle states
-	if (ShouldRestoreTogglesOnFocus())
-	{
-		bRestoreAiming := bAiming
-		bRestoreCrouching := bCrouching
-		bRestoreSprinting := bSprinting
-		bRestoreHandled := true
-	}
-
-	ReleaseAllKeys()
+	TakeToggleKeysSnapshot()
 
 	; Check if modifier keys are physically pressed to handle Ctrl+Alt+Tab, Shift+Alt+Tab and Ctrl+Shift+Alt+Tab
 	if (GetKeyState("Control", "P"))
@@ -428,20 +409,11 @@ SendAltTab()
 
 SendClick(pKey)
 {
-	global
-
 	;OutputDebug, %A_ThisFunc%::begin
 
 	; Take a snapshot of the toggle states
-	if (ShouldRestoreTogglesOnFocus())
-	{
-		bRestoreAiming := bAiming
-		bRestoreCrouching := bCrouching
-		bRestoreSprinting := bSprinting
-		bRestoreHandled := true
-	}
+	TakeToggleKeysSnapshot()
 
-	ReleaseAllKeys()
 	SendKey(pKey, 0, true)
 
 	;OutputDebug, %A_ThisFunc%::end
@@ -454,15 +426,7 @@ SendEscape()
 	;OutputDebug, %A_ThisFunc%::begin
 
 	; Take a snapshot of the toggle states
-	if (ShouldRestoreTogglesOnFocus())
-	{
-		bRestoreAiming := bAiming
-		bRestoreCrouching := bCrouching
-		bRestoreSprinting := bSprinting
-		bRestoreHandled := true
-	}
-
-	ReleaseAllKeys()
+	TakeToggleKeysSnapshot()
 
 	; Check if modifier keys are physically pressed to handle Ctrl+Escape
 	if (GetKeyState("Control", "P"))
@@ -488,20 +452,10 @@ SendKey(pKey, pSleepMs := 0, pWait := false)
 
 SendWindows()
 {
-	global
-
 	;OutputDebug, %A_ThisFunc%::begin
 
 	; Take a snapshot of the toggle states
-	if (ShouldRestoreTogglesOnFocus())
-	{
-		bRestoreAiming := bAiming
-		bRestoreCrouching := bCrouching
-		bRestoreSprinting := bSprinting
-		bRestoreHandled := true
-	}
-
-	ReleaseAllKeys()
+	TakeToggleKeysSnapshot()
 
 	; Check if modifier keys are physically pressed to handle Shift+Win
 	if (GetKeyState("Shift", "P"))
@@ -554,6 +508,22 @@ SprintToggle(pSprinting, pWait := false)
 	;OutputDebug, %A_ThisFunc%::end
 }
 
+TakeToggleKeysSnapshot(pReleaseKeys := true)
+{
+	global
+
+	if (ShouldRestoreTogglesOnFocus())
+	{
+		bRestoreAiming := bAiming
+		bRestoreCrouching := bCrouching
+		bRestoreSprinting := bSprinting
+		bToggleKeysSnapshotTaken := true
+	}
+
+	if (pReleaseKeys)
+		ReleaseAllKeys()
+}
+
 ; Exit script
 ExitFunc(pExitReason, pExitCode)
 {
@@ -571,6 +541,7 @@ ExitWithErrorMessage(pErrorMessage)
 	ExitApp, 1
 }
 
+; Fixes an issue where you couldn't click outside the window while toggle keys are mouse buttons and are enabled
 #IfWinActive ahk_group windowIDGroup
 LButton::
 MButton::
@@ -584,7 +555,7 @@ if (!IsMouseOverWindow(windowID))
 }
 else
 {
-	;OutputDebug, %A_ThisHotkey%::click
+	;OutputDebug, %A_ThisHotkey%::inside window
 	SendKey(A_ThisHotkey, 0, true)
 }
 
