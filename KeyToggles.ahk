@@ -235,7 +235,7 @@ IsMouseOverWindow(pHwnd)
 	return pHwnd == mouseWindowID
 }
 
-; Disable toggles on focus lost and optionally restore them on focus
+; Hook the window and register hotkeys if necessary, disable toggles on focus lost and optionally restore them on focus
 OnFocusChanged()
 {
 	global
@@ -281,6 +281,7 @@ OnFocusChanged()
 		else
 		{
 			OutputDebug, %A_ThisFunc%::saveToggleStates(%bRestoreAiming%, %bRestoreCrouching%, %bRestoreSprinting%)
+
 			bRestoreAiming := bAiming
 			bRestoreCrouching := bCrouching
 			bRestoreSprinting := bSprinting
@@ -322,6 +323,9 @@ ReadConfigFile()
 	IniRead, aimAutofireKey, %configFileName%, Keys, aimAutofireKey, F1
 	IniRead, crouchAutofireKey, %configFileName%, Keys, crouchAutofireKey, F2
 	IniRead, sprintAutofireKey, %configFileName%, Keys, sprintAutofireKey, F3
+
+	; Debug
+	IniRead, bDebugMode, %configFileName%, Debug, debugMode, 0
 
 	if (sWindowName == "put_window_name_here")
 		ExitWithErrorMessage("You must specify a window name! The script will now exit.")
@@ -565,13 +569,30 @@ else
 return
 #IfWinActive
 
+#If bDebugMode
+; Exit script
+!F10:: ; ALT+F10
+Suspend, Permit
+ExitApp
+return
+
+; Reload script
+!F11:: ; ALT+F11
+Suspend, Permit
+Reload
+return
+#If
+
 ; Suspend script (useful when in menus)
 !F12:: ; ALT+F12
 Suspend
 
 ; Single beep when suspended
 if (A_IsSuspended)
+{
 	SoundBeep, 1000
+	ReleaseAllKeys()
+}
 ; Double beep when resumed
 else
 {
@@ -579,5 +600,4 @@ else
 	SoundBeep, 1000
 }
 
-ReleaseAllKeys()
 return
