@@ -1,4 +1,4 @@
-; KeyToggles v1.4
+; KeyToggles v1.5
 
 ; TODO
 ; add application profiles (https://stackoverflow.com/questions/45190170/how-can-i-make-this-ini-file-into-a-listview-in-autohotkey)
@@ -309,6 +309,7 @@ ReadConfigFile()
 	IniRead, bCrouchMode, %configFileName%, General, crouchMode, 1
 	IniRead, bSprintMode, %configFileName%, General, sprintMode, 1
 	IniRead, nAutofireKeyDelay, %configFileName%, General, autofireKeyDelay, 100
+	IniRead, bFixSystemKeys, %configFileName%, General, fixSystemKeys, 1
 	IniRead, nFocusCheckDelay, %configFileName%, General, focusCheckDelay, 1000
 	IniRead, nHookDelay, %configFileName%, General, hookDelay, 0
 	IniRead, nKeyDelay, %configFileName%, General, keyDelay, 0
@@ -346,10 +347,10 @@ RegisterHotkeys()
 	Hotkey, %sprintAutofireKey%, sprintLabel, % bSprintMode == KEY_MODE_AUTOFIRE ? "On" : "Off"
 
 	; Fixes issues when pressing system keys while toggle keys are modifiers and are enabled
-	Hotkey, !Tab, SendAltTab, On
-	Hotkey, Escape, SendEscape, On
-	Hotkey, LWin, SendWindows, On
-	Hotkey, RWin, SendWindows, On
+	Hotkey, !Tab, SendAltTab, % bFixSystemKeys ? "On" : "Off"
+	Hotkey, Escape, SendEscape, % bFixSystemKeys ? "On" : "Off"
+	Hotkey, LWin, SendWindows, % bFixSystemKeys ? "On" : "Off"
+	Hotkey, RWin, SendWindows, % bFixSystemKeys ? "On" : "Off"
 }
 
 ReleaseAllKeys()
